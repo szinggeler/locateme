@@ -1,10 +1,4 @@
-# Locateme
-Show my geoposition an distance to a reference point.
-
-[Start](locateme.html)
-
-
-
+[Start locateme](locateme.html)
 
 ## Welcome to GitHub Pages
 
