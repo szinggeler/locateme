@@ -32475,9 +32475,9 @@ var _user$project$Model$Position = F5(
 	function (a, b, c, d, e) {
 		return {latitude: a, longitude: b, altitude: c, east: d, north: e};
 	});
-var _user$project$Model$MapConfig = F4(
-	function (a, b, c, d) {
-		return {center: a, zoom: b, refLocation: c, measurements: d};
+var _user$project$Model$MapConfig = F5(
+	function (a, b, c, d, e) {
+		return {center: a, zoom: b, refLocation: c, measurements: d, checkDistance: e};
 	});
 var _user$project$Model$ToggleShowDiagram = {ctor: 'ToggleShowDiagram'};
 var _user$project$Model$ToggleShowDistance = {ctor: 'ToggleShowDistance'};
@@ -32493,7 +32493,6 @@ var _user$project$Model$WindowSizeUpdated = function (a) {
 var _user$project$Model$ChangeRefLocation = function (a) {
 	return {ctor: 'ChangeRefLocation', _0: a};
 };
-var _user$project$Model$DeleteMeasurements = {ctor: 'DeleteMeasurements'};
 var _user$project$Model$ReloadLocation = {ctor: 'ReloadLocation'};
 var _user$project$Model$InitGeolocation = function (a) {
 	return {ctor: 'InitGeolocation', _0: a};
@@ -34640,7 +34639,7 @@ var _user$project$View$showHeader = function (page) {
 			case 'AboutPage':
 				return 'Home';
 			case 'MeasurePage':
-				return 'Measure';
+				return 'GPS';
 			default:
 				return 'Settings';
 		}
@@ -34846,7 +34845,8 @@ var _user$project$PortOl$setOlConfig = _elm_lang$core$Native_Platform.outgoingPo
 						distance: v.distance,
 						timestamp: v.timestamp
 					};
-				})
+				}),
+			checkDistance: v.checkDistance
 		};
 	});
 var _user$project$PortOl$setOlAction = _elm_lang$core$Native_Platform.outgoingPort(
@@ -34860,12 +34860,9 @@ var _user$project$PortOl$topicChanged = _elm_lang$core$Native_Platform.incomingP
 var _user$project$Main$buildOlMapConfig = function (model) {
 	var refLoc = model.refLocation;
 	var refPos = _elm_lang$core$Tuple$second(refLoc);
-	var mapConfig = {
-		center: {ctor: '_Tuple2', _0: refPos.east, _1: refPos.north},
-		zoom: 18,
-		measurements: model.measurements,
-		refLocation: refLoc
-	};
+	var checkDistance = model.settings.checkDistance;
+	var getCenter = checkDistance ? {ctor: '_Tuple2', _0: refPos.east, _1: refPos.north} : {ctor: '_Tuple2', _0: model.myLocation.east, _1: model.myLocation.north};
+	var mapConfig = {center: getCenter, zoom: 18, measurements: model.measurements, refLocation: refLoc, checkDistance: checkDistance};
 	return mapConfig;
 };
 var _user$project$Main$runden = F2(
@@ -35180,33 +35177,6 @@ var _user$project$Main$update = F2(
 						_user$project$Model$InitGeolocation,
 						_elm_lang$geolocation$Geolocation$nowWith(_user$project$Model$highAccuracyOptions))
 				};
-			case 'DeleteMeasurements':
-				var newModel = _elm_lang$core$Native_Utils.update(
-					model,
-					{
-						measurements: {ctor: '[]'},
-						myLocation: _user$project$Model$iniMyLocation,
-						meanPositions: {ctor: '[]'},
-						meanPosition: _user$project$Model$iniMeanPosition
-					});
-				return {
-					ctor: '_Tuple2',
-					_0: newModel,
-					_1: _elm_lang$core$Platform_Cmd$batch(
-						{
-							ctor: '::',
-							_0: A2(
-								_elm_lang$core$Task$attempt,
-								_user$project$Model$InitGeolocation,
-								_elm_lang$geolocation$Geolocation$nowWith(_user$project$Model$highAccuracyOptions)),
-							_1: {
-								ctor: '::',
-								_0: _user$project$PortOl$setOlConfig(
-									_user$project$Main$buildOlMapConfig(newModel)),
-								_1: {ctor: '[]'}
-							}
-						})
-				};
 			case 'ChangeRefLocation':
 				return {
 					ctor: '_Tuple2',
@@ -35243,15 +35213,6 @@ var _user$project$Main$update = F2(
 				};
 			case 'SetGeoLocState':
 				var _p14 = _p11._0;
-				var newCmd = _elm_lang$core$Native_Utils.eq(_p14, _user$project$Model$Track) ? _elm_lang$core$Platform_Cmd$batch(
-					{
-						ctor: '::',
-						_0: A2(
-							_elm_lang$core$Task$attempt,
-							_user$project$Model$InitGeolocation,
-							_elm_lang$geolocation$Geolocation$nowWith(_user$project$Model$highAccuracyOptions)),
-						_1: {ctor: '[]'}
-					}) : _elm_lang$core$Platform_Cmd$none;
 				var newModel = _elm_lang$core$Native_Utils.eq(_p14, _user$project$Model$Reset) ? _elm_lang$core$Native_Utils.update(
 					model,
 					{
@@ -35263,6 +35224,21 @@ var _user$project$Main$update = F2(
 					}) : _elm_lang$core$Native_Utils.update(
 					model,
 					{geoLocState: _p14});
+				var newCmd = _elm_lang$core$Native_Utils.eq(_p14, _user$project$Model$Track) ? _elm_lang$core$Platform_Cmd$batch(
+					{
+						ctor: '::',
+						_0: A2(
+							_elm_lang$core$Task$attempt,
+							_user$project$Model$InitGeolocation,
+							_elm_lang$geolocation$Geolocation$nowWith(_user$project$Model$highAccuracyOptions)),
+						_1: {ctor: '[]'}
+					}) : (_elm_lang$core$Native_Utils.eq(_p14, _user$project$Model$Reset) ? _elm_lang$core$Platform_Cmd$batch(
+					{
+						ctor: '::',
+						_0: _user$project$PortOl$setOlConfig(
+							_user$project$Main$buildOlMapConfig(newModel)),
+						_1: {ctor: '[]'}
+					}) : _elm_lang$core$Platform_Cmd$none);
 				return {ctor: '_Tuple2', _0: newModel, _1: newCmd};
 			case 'ShowPage':
 				var _p15 = _p11._0;
@@ -35329,7 +35305,7 @@ var _user$project$Main$main = _elm_lang$html$Html$program(
 var Elm = {};
 Elm['Main'] = Elm['Main'] || {};
 if (typeof _user$project$Main$main !== 'undefined') {
-    _user$project$Main$main(Elm['Main'], 'Main', {"types":{"unions":{"Model.Msg":{"args":[],"tags":{"ToggleShowDiagram":[],"WindowSizeUpdated":["Window.Size"],"ChangeRefLocation":["( String, Model.Position )"],"SetGeoLocState":["Model.GeoLocState"],"ReloadLocation":[],"ToggleShowDistance":[],"InitGeolocation":["Result.Result Geolocation.Error Geolocation.Location"],"ShowPage":["Model.Page"],"Geolocation":["Geolocation.Location"],"DeleteMeasurements":[]}},"Model.GeoLocState":{"args":[],"tags":{"Track":[],"Pause":[],"Reset":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Model.Page":{"args":[],"tags":{"AboutPage":[],"MeasurePage":[],"SettingsPage":[]}},"Geolocation.Movement":{"args":[],"tags":{"Moving":["{ speed : Float, degreesFromNorth : Float }"],"Static":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"Geolocation.Error":{"args":[],"tags":{"PermissionDenied":["String"],"LocationUnavailable":["String"],"Timeout":["String"]}}},"aliases":{"Model.Position":{"args":[],"type":"{ latitude : Float , longitude : Float , altitude : Float , east : Float , north : Float }"},"Geolocation.Location":{"args":[],"type":"{ latitude : Float , longitude : Float , accuracy : Float , altitude : Maybe.Maybe Geolocation.Altitude , movement : Maybe.Maybe Geolocation.Movement , timestamp : Time.Time }"},"Geolocation.Altitude":{"args":[],"type":"{ value : Float, accuracy : Float }"},"Window.Size":{"args":[],"type":"{ width : Int, height : Int }"},"Time.Time":{"args":[],"type":"Float"}},"message":"Model.Msg"},"versions":{"elm":"0.18.0"}});
+    _user$project$Main$main(Elm['Main'], 'Main', {"types":{"unions":{"Model.Msg":{"args":[],"tags":{"ToggleShowDiagram":[],"WindowSizeUpdated":["Window.Size"],"ChangeRefLocation":["( String, Model.Position )"],"SetGeoLocState":["Model.GeoLocState"],"ReloadLocation":[],"ToggleShowDistance":[],"InitGeolocation":["Result.Result Geolocation.Error Geolocation.Location"],"ShowPage":["Model.Page"],"Geolocation":["Geolocation.Location"]}},"Model.GeoLocState":{"args":[],"tags":{"Track":[],"Pause":[],"Reset":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Model.Page":{"args":[],"tags":{"AboutPage":[],"MeasurePage":[],"SettingsPage":[]}},"Geolocation.Movement":{"args":[],"tags":{"Moving":["{ speed : Float, degreesFromNorth : Float }"],"Static":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"Geolocation.Error":{"args":[],"tags":{"PermissionDenied":["String"],"LocationUnavailable":["String"],"Timeout":["String"]}}},"aliases":{"Model.Position":{"args":[],"type":"{ latitude : Float , longitude : Float , altitude : Float , east : Float , north : Float }"},"Geolocation.Location":{"args":[],"type":"{ latitude : Float , longitude : Float , accuracy : Float , altitude : Maybe.Maybe Geolocation.Altitude , movement : Maybe.Maybe Geolocation.Movement , timestamp : Time.Time }"},"Geolocation.Altitude":{"args":[],"type":"{ value : Float, accuracy : Float }"},"Window.Size":{"args":[],"type":"{ width : Int, height : Int }"},"Time.Time":{"args":[],"type":"Float"}},"message":"Model.Msg"},"versions":{"elm":"0.18.0"}});
 }
 
 if (typeof define === "function" && define['amd'])
