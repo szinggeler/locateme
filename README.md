@@ -1,4 +1,6 @@
-[Start locateme](locateme.html)
+[Start locateme debug](locateme.html)
+
+[Start locatemeLk](locatemeLk.html)
 
 ## Welcome to GitHub Pages
 
