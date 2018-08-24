@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="utf-8">
+    <meta name="description" content="">
+    <meta name="author" content="Stephan Zinggeler">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LocateMe</title>
+
+    <link href='./lib/ol-4-6-5.css' rel='stylesheet' />
+    <style>
+        .map {
+            height: 100%;
+            width: 100%;
+            background: #eef;
+        }
+    </style>
+    <script type="text/javascript" src="./lib/ol-4-6-5.js"></script>
+    <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
+    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL"></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.4.4/proj4.js"></script> -->
+    <script type="text/javascript" src="./lib/proj4.js"></script>
+    <!-- <script src="https://epsg.io/2056.js"></script> -->
+    <script type="text/javascript" src="./lib/2056.js"></script>
+    <script type="text/javascript" src="GeotoolsOlPort.js"></script>
+</head>
+<body style="background: rgb(46, 52, 54);">
+    <script type="text/javascript" src="locateme.js"></script>
+    <script type="text/javascript">
+        var app = Elm.Main.fullscreen();
+
+        Geotools_port_init(app);
+    </script>
+</body>
+</html>
