@@ -64,12 +64,30 @@ var DSOlMap = {
 		return [style];
 	},
 
+	myLocStyle: function () {
+		var style = new ol.style.Style({
+		image: new ol.style.Circle({
+		  radius: 8,
+		  stroke: new ol.style.Stroke({
+		    color: '#FE7900',
+		    width: 2
+		  }),
+		  fill: new ol.style.Fill({
+		  	color: 'rgba(118,146,210,1)'
+		  })
+		})
+		});
+		return [style];
+	},
+
 	buildMeasureFeature: function (coordType, featureId, measure){
 		var feature = new ol.Feature(
 	        new ol.geom.Point([measure.east, measure.north])
 	    );
 	    if (coordType=="ref"){
 	    	feature.setStyle(DSOlMap.refStyle());
+	    } else if (coordType=="myloc"){
+	    	feature.setStyle(DSOlMap.myLocStyle());
 	    } else {
 	    	feature.setStyle(DSOlMap.measureStyle());
 	    }
@@ -102,6 +120,13 @@ var DSOlMap = {
 		}
 	},
 
+	addMyLoc: function (myLoc) {
+		var oldLocation = DSOlMap.featureSource.getFeatureById("myLocation");
+		if (oldLocation) {
+				DSOlMap.featureSource.removeFeature(oldLocation);
+		}
+		DSOlMap.featureSource.addFeature(DSOlMap.buildMeasureFeature("myloc", "myLocation", myLoc));
+	},
 
 	setConfig: function (mapconfig, elmApp) {
 		var features;
@@ -130,8 +155,10 @@ var DSOlMap = {
 	  			DSOlMap.addRefLoc(mapconfig.refLocation);
 	  		}
 	  		// add measurements
-	  		DSOlMap.addMeasurements(mapconfig.measurements);
-
+	  		if (mapconfig.measurements.length > 0) {
+		  		DSOlMap.addMeasurements(mapconfig.measurements);
+		  		DSOlMap.addMyLoc(mapconfig.measurements[0]);
+		  	}
 	  		DSOlMap.mapconfig = mapconfig;
 		}
 
@@ -145,7 +172,7 @@ var DSOlMap = {
 		return new ol.layer.Image({
 			source: new ol.source.ImageWMS({
 				url: 'https://wms.zh.ch/uplayerwms/',
-				crossOrigin: 'anonymous',
+				//crossOrigin: 'Anonymous',
 				attributions: '© <a href="https://maps.zh.ch?topic=UPZH&srid=2056" target="_blank">Übersichtsplan / maps.zh.ch</a>',
 				params: {'LAYERS': 'uplayerwms','FORMAT': 'image/png; mode=8bit'},
 				serverType: 'mapserver'

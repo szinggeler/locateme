@@ -32508,15 +32508,7 @@ var _user$project$Model$Pause = {ctor: 'Pause'};
 var _user$project$Model$iniModel = {
 	error: '',
 	myLocation: _user$project$Model$iniMyLocation,
-	measurements: {
-		ctor: '::',
-		_0: {accuracyAltitude: _elm_lang$core$Maybe$Nothing, accuracyPos: 22, altitude: _elm_lang$core$Maybe$Nothing, distance: 10.61, east: 2699100.41, height: _elm_lang$core$Maybe$Nothing, latitude: 47.5078218, locationKey: 'Winterthur', longitude: 8.7541178, movingDegrees: _elm_lang$core$Maybe$Nothing, movingSpeed: _elm_lang$core$Maybe$Nothing, north: 1262727.23, timestamp: 1530867187430},
-		_1: {
-			ctor: '::',
-			_0: {accuracyAltitude: _elm_lang$core$Maybe$Nothing, accuracyPos: 6, altitude: _elm_lang$core$Maybe$Nothing, distance: 10.61, east: 2699115.75, height: _elm_lang$core$Maybe$Nothing, latitude: 47.507823, locationKey: 'Winterthur', longitude: 8.7541111, movingDegrees: _elm_lang$core$Maybe$Nothing, movingSpeed: _elm_lang$core$Maybe$Nothing, north: 1262717.76, timestamp: 1530867187431},
-			_1: {ctor: '[]'}
-		}
-	},
+	measurements: {ctor: '[]'},
 	refLocation: _user$project$Model$winti,
 	meanPosition: _user$project$Model$iniMeanPosition,
 	meanPositions: {ctor: '[]'},
@@ -32536,7 +32528,7 @@ var _user$project$Model$iniModel = {
 	settings: _user$project$Model$iniSettings,
 	zoomLevel: 1,
 	geoLocState: _user$project$Model$Pause,
-	activePage: _user$project$Model$SettingsPage
+	activePage: _user$project$Model$AboutPage
 };
 var _user$project$Model$Track = {ctor: 'Track'};
 
@@ -32546,6 +32538,7 @@ var _user$project$Views_Styles$myFocusStyle = {
 		_elm_lang$core$Color$greyscale(0.2)),
 	shadow: _elm_lang$core$Maybe$Nothing
 };
+var _user$project$Views_Styles$tabbarBackground = A3(_elm_lang$core$Color$rgb, 50, 50, 120);
 var _user$project$Views_Styles$selectable = _mdgriffith$stylish_elephants$Element$htmlAttribute(
 	_elm_lang$html$Html_Attributes$style(
 		{
@@ -32688,6 +32681,7 @@ var _user$project$Views_Styles$smallButtonStyle = {
 	}
 };
 var _user$project$Views_Styles$tabStyle = function (active) {
+	var bgColor = active ? _elm_lang$core$Color$darkCharcoal : _user$project$Views_Styles$tabbarBackground;
 	var fontColor = active ? _elm_lang$core$Color$white : _elm_lang$core$Color$darkGray;
 	var borderOpts = active ? {bottom: 0, left: 1, right: 1, top: 1} : {bottom: 1, left: 0, right: 0, top: 0};
 	return {
@@ -32698,41 +32692,45 @@ var _user$project$Views_Styles$tabStyle = function (active) {
 			_user$project$Views_Styles$paddingScale(1)),
 		_1: {
 			ctor: '::',
-			_0: _mdgriffith$stylish_elephants$Element_Border$color(_elm_lang$core$Color$darkGray),
+			_0: _mdgriffith$stylish_elephants$Element_Background$color(bgColor),
 			_1: {
 				ctor: '::',
-				_0: _mdgriffith$stylish_elephants$Element_Border$solid,
+				_0: _mdgriffith$stylish_elephants$Element_Border$color(_elm_lang$core$Color$darkGray),
 				_1: {
 					ctor: '::',
-					_0: _mdgriffith$stylish_elephants$Element_Border$widthEach(borderOpts),
+					_0: _mdgriffith$stylish_elephants$Element_Border$solid,
 					_1: {
 						ctor: '::',
-						_0: _mdgriffith$stylish_elephants$Element_Border$roundEach(
-							{topLeft: 10, topRight: 10, bottomLeft: 0, bottomRight: 0}),
+						_0: _mdgriffith$stylish_elephants$Element_Border$widthEach(borderOpts),
 						_1: {
 							ctor: '::',
-							_0: _mdgriffith$stylish_elephants$Element_Font$size(
-								_user$project$Views_Styles$scaled(3)),
+							_0: _mdgriffith$stylish_elephants$Element_Border$roundEach(
+								{topLeft: 10, topRight: 10, bottomLeft: 0, bottomRight: 0}),
 							_1: {
 								ctor: '::',
-								_0: _mdgriffith$stylish_elephants$Element_Font$color(fontColor),
+								_0: _mdgriffith$stylish_elephants$Element_Font$size(
+									_user$project$Views_Styles$scaled(3)),
 								_1: {
 									ctor: '::',
-									_0: _mdgriffith$stylish_elephants$Element$mouseDown(
-										{
-											ctor: '::',
-											_0: _mdgriffith$stylish_elephants$Element_Background$color(
-												A3(_elm_lang$core$Color$rgb, 30, 30, 110)),
-											_1: {
-												ctor: '::',
-												_0: _mdgriffith$stylish_elephants$Element_Font$color(_elm_lang$core$Color$orange),
-												_1: {ctor: '[]'}
-											}
-										}),
+									_0: _mdgriffith$stylish_elephants$Element_Font$color(fontColor),
 									_1: {
 										ctor: '::',
-										_0: _mdgriffith$stylish_elephants$Element$pointer,
-										_1: {ctor: '[]'}
+										_0: _mdgriffith$stylish_elephants$Element$mouseDown(
+											{
+												ctor: '::',
+												_0: _mdgriffith$stylish_elephants$Element_Background$color(
+													A3(_elm_lang$core$Color$rgb, 30, 30, 110)),
+												_1: {
+													ctor: '::',
+													_0: _mdgriffith$stylish_elephants$Element_Font$color(_elm_lang$core$Color$orange),
+													_1: {ctor: '[]'}
+												}
+											}),
+										_1: {
+											ctor: '::',
+											_0: _mdgriffith$stylish_elephants$Element$pointer,
+											_1: {ctor: '[]'}
+										}
 									}
 								}
 							}
@@ -33082,19 +33080,11 @@ var _user$project$Views_Settings$showSettings = function (model) {
 		_elm_lang$core$Basics_ops['++'],
 		{
 			ctor: '::',
-			_0: _user$project$Views_Helpers$sectionTitle('Analyse Messungen'),
+			_0: _user$project$Views_Helpers$sectionTitle('Referenzpunkt zeigen'),
 			_1: {
 				ctor: '::',
-				_0: _user$project$Views_Settings$showMeasurementDiagram(model.settings.showDiagram),
-				_1: {
-					ctor: '::',
-					_0: _user$project$Views_Helpers$sectionTitle('Referenzpunkt zeigen'),
-					_1: {
-						ctor: '::',
-						_0: _user$project$Views_Settings$showDistance(model.settings.checkDistance),
-						_1: {ctor: '[]'}
-					}
-				}
+				_0: _user$project$Views_Settings$showDistance(model.settings.checkDistance),
+				_1: {ctor: '[]'}
 			}
 		},
 		chooseRef);
@@ -34652,9 +34642,17 @@ var _user$project$View$showHeader = function (page) {
 				_0: _mdgriffith$stylish_elephants$Element$spacing(5),
 				_1: {
 					ctor: '::',
-					_0: _mdgriffith$stylish_elephants$Element_Events$onClick(
-						_user$project$Model$ShowPage(p)),
-					_1: {ctor: '[]'}
+					_0: _mdgriffith$stylish_elephants$Element$width(_mdgriffith$stylish_elephants$Element$shrink),
+					_1: {
+						ctor: '::',
+						_0: _mdgriffith$stylish_elephants$Element$centerX,
+						_1: {
+							ctor: '::',
+							_0: _mdgriffith$stylish_elephants$Element_Events$onClick(
+								_user$project$Model$ShowPage(p)),
+							_1: {ctor: '[]'}
+						}
+					}
 				}
 			},
 			{
@@ -34699,7 +34697,11 @@ var _user$project$View$showHeader = function (page) {
 				ctor: '::',
 				_0: A2(
 					_mdgriffith$stylish_elephants$Element$row,
-					{ctor: '[]'},
+					{
+						ctor: '::',
+						_0: _mdgriffith$stylish_elephants$Element_Background$color(_user$project$Views_Styles$tabbarBackground),
+						_1: {ctor: '[]'}
+					},
 					{
 						ctor: '::',
 						_0: A2(
@@ -34750,7 +34752,7 @@ var _user$project$View$getViewContent = function (model) {
 				_0: A2(
 					_mdgriffith$stylish_elephants$Element$el,
 					{ctor: '[]'},
-					_mdgriffith$stylish_elephants$Element$text('About / Help')),
+					_mdgriffith$stylish_elephants$Element$text('\n\nHome / About / Help\n===================\n\nErklärungen und Bilder\n                ')),
 				_1: {ctor: '[]'}
 			};
 		case 'MeasurePage':
