@@ -10473,7 +10473,7 @@ var mdgriffith$elm_ui$Element$image = F2(
 var author$project$Main$logo = A2(
 	mdgriffith$elm_ui$Element$image,
 	_List_Nil,
-	{description: 'Logo Kanton Zürich (Löwe)', src: 'loewe.png'});
+	{description: 'Logo Kanton Zürich (Löwe)', src: './img/loewe.png'});
 var elm$core$Basics$pow = _Basics_pow;
 var mdgriffith$elm_ui$Element$modular = F3(
 	function (normal, ratio, rescale) {
@@ -10736,7 +10736,7 @@ var elm$html$Html$Events$onClick = function (msg) {
 };
 var mdgriffith$elm_ui$Element$Events$onClick = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Attr, elm$html$Html$Events$onClick);
 var author$project$Main$coordSwitch = function (proj) {
-	var altImage = _Utils_eq(proj, author$project$Model$WGS84) ? {description: 'WGS84', src: 'wgs84.png'} : {description: 'LV95', src: 'lv95.png'};
+	var altImage = _Utils_eq(proj, author$project$Model$WGS84) ? {description: 'WGS84', src: './im/wgs84.png'} : {description: 'LV95', src: './im/lv95.png'};
 	return A2(
 		mdgriffith$elm_ui$Element$image,
 		_List_fromArray(
