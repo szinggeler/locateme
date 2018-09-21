@@ -1,6 +1,6 @@
-[Start locateme debug](locateme.html)
+[Start locateme](locateme.html)
 
-[Start locatemeLk](locatemeLk.html)
+[Start locatemeLk (debug)](locatemeLk.html)
 
 ## Welcome to GitHub Pages
 
