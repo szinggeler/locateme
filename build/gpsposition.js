@@ -232,87 +232,6 @@ var _JsArray_appendN = F3(function(n, dest, source)
 
 
 
-var _List_Nil_UNUSED = { $: 0 };
-var _List_Nil = { $: '[]' };
-
-function _List_Cons_UNUSED(hd, tl) { return { $: 1, a: hd, b: tl }; }
-function _List_Cons(hd, tl) { return { $: '::', a: hd, b: tl }; }
-
-
-var _List_cons = F2(_List_Cons);
-
-function _List_fromArray(arr)
-{
-	var out = _List_Nil;
-	for (var i = arr.length; i--; )
-	{
-		out = _List_Cons(arr[i], out);
-	}
-	return out;
-}
-
-function _List_toArray(xs)
-{
-	for (var out = []; xs.b; xs = xs.b) // WHILE_CONS
-	{
-		out.push(xs.a);
-	}
-	return out;
-}
-
-var _List_map2 = F3(function(f, xs, ys)
-{
-	for (var arr = []; xs.b && ys.b; xs = xs.b, ys = ys.b) // WHILE_CONSES
-	{
-		arr.push(A2(f, xs.a, ys.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map3 = F4(function(f, xs, ys, zs)
-{
-	for (var arr = []; xs.b && ys.b && zs.b; xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A3(f, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map4 = F5(function(f, ws, xs, ys, zs)
-{
-	for (var arr = []; ws.b && xs.b && ys.b && zs.b; ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A4(f, ws.a, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map5 = F6(function(f, vs, ws, xs, ys, zs)
-{
-	for (var arr = []; vs.b && ws.b && xs.b && ys.b && zs.b; vs = vs.b, ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A5(f, vs.a, ws.a, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_sortBy = F2(function(f, xs)
-{
-	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
-		return _Utils_cmp(f(a), f(b));
-	}));
-});
-
-var _List_sortWith = F2(function(f, xs)
-{
-	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
-		var ord = A2(f, a, b);
-		return ord === elm$core$Basics$EQ ? 0 : ord === elm$core$Basics$LT ? -1 : 1;
-	}));
-});
-
-
-
 // LOG
 
 var _Debug_log_UNUSED = F2(function(tag, value)
@@ -776,6 +695,87 @@ function _Utils_ap(xs, ys)
 	}
 	return root;
 }
+
+
+
+var _List_Nil_UNUSED = { $: 0 };
+var _List_Nil = { $: '[]' };
+
+function _List_Cons_UNUSED(hd, tl) { return { $: 1, a: hd, b: tl }; }
+function _List_Cons(hd, tl) { return { $: '::', a: hd, b: tl }; }
+
+
+var _List_cons = F2(_List_Cons);
+
+function _List_fromArray(arr)
+{
+	var out = _List_Nil;
+	for (var i = arr.length; i--; )
+	{
+		out = _List_Cons(arr[i], out);
+	}
+	return out;
+}
+
+function _List_toArray(xs)
+{
+	for (var out = []; xs.b; xs = xs.b) // WHILE_CONS
+	{
+		out.push(xs.a);
+	}
+	return out;
+}
+
+var _List_map2 = F3(function(f, xs, ys)
+{
+	for (var arr = []; xs.b && ys.b; xs = xs.b, ys = ys.b) // WHILE_CONSES
+	{
+		arr.push(A2(f, xs.a, ys.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map3 = F4(function(f, xs, ys, zs)
+{
+	for (var arr = []; xs.b && ys.b && zs.b; xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A3(f, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map4 = F5(function(f, ws, xs, ys, zs)
+{
+	for (var arr = []; ws.b && xs.b && ys.b && zs.b; ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A4(f, ws.a, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map5 = F6(function(f, vs, ws, xs, ys, zs)
+{
+	for (var arr = []; vs.b && ws.b && xs.b && ys.b && zs.b; vs = vs.b, ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A5(f, vs.a, ws.a, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_sortBy = F2(function(f, xs)
+{
+	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
+		return _Utils_cmp(f(a), f(b));
+	}));
+});
+
+var _List_sortWith = F2(function(f, xs)
+{
+	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
+		var ord = A2(f, a, b);
+		return ord === elm$core$Basics$EQ ? 0 : ord === elm$core$Basics$LT ? -1 : 1;
+	}));
+});
 
 
 
@@ -4854,31 +4854,8 @@ var author$project$Model$LV95 = {$: 'LV95'};
 var author$project$Model$Pause = {$: 'Pause'};
 var author$project$Model$iniMeanPosition = {altitude: 0, east: 0, latitude: 0, longitude: 0, north: 0};
 var elm$core$Maybe$Nothing = {$: 'Nothing'};
-var elm$core$Basics$identity = function (x) {
-	return x;
-};
-var elm$time$Time$Posix = function (a) {
-	return {$: 'Posix', a: a};
-};
-var elm$time$Time$millisToPosix = elm$time$Time$Posix;
-var author$project$Model$iniMyLocation = {
-	accuracyAltitude: elm$core$Maybe$Nothing,
-	accuracyPos: 22,
-	altitude: elm$core$Maybe$Nothing,
-	distance: 10.61,
-	east: 2699100.41,
-	height: elm$core$Maybe$Nothing,
-	latitude: 47.5078218,
-	locationKey: 'Winterthur',
-	longitude: 8.7541178,
-	movingDegrees: elm$core$Maybe$Nothing,
-	movingSpeed: elm$core$Maybe$Nothing,
-	north: 1262727.23,
-	timestamp: elm$time$Time$millisToPosix(1530867187430)
-};
-var elm$core$Basics$False = {$: 'False'};
-var elm$core$Basics$True = {$: 'True'};
-var author$project$Model$iniSettings = {checkDistance: true, meanMeasures: 5, showDiagram: false};
+var elm$core$Basics$EQ = {$: 'EQ'};
+var elm$core$Basics$LT = {$: 'LT'};
 var elm$core$Elm$JsArray$foldr = _JsArray_foldr;
 var elm$core$Array$foldr = F3(
 	function (func, baseCase, _n0) {
@@ -4900,8 +4877,6 @@ var elm$core$Array$foldr = F3(
 			A3(elm$core$Elm$JsArray$foldr, func, baseCase, tail),
 			tree);
 	});
-var elm$core$Basics$EQ = {$: 'EQ'};
-var elm$core$Basics$LT = {$: 'LT'};
 var elm$core$List$cons = _List_cons;
 var elm$core$Array$toList = function (array) {
 	return A3(elm$core$Array$foldr, elm$core$List$cons, _List_Nil, array);
@@ -4959,6 +4934,64 @@ var elm$core$Set$toList = function (_n0) {
 	var dict = _n0.a;
 	return elm$core$Dict$keys(dict);
 };
+var elm$core$Basics$identity = function (x) {
+	return x;
+};
+var elm$time$Time$Posix = function (a) {
+	return {$: 'Posix', a: a};
+};
+var elm$time$Time$millisToPosix = elm$time$Time$Posix;
+var author$project$Model$iniMeasurements = _List_fromArray(
+	[
+		{
+		accuracyAltitude: elm$core$Maybe$Nothing,
+		accuracyPos: 22,
+		altitude: elm$core$Maybe$Nothing,
+		distance: 10.61,
+		east: 2699100.41,
+		height: elm$core$Maybe$Nothing,
+		latitude: 47.5078218,
+		locationKey: 'Winterthur',
+		longitude: 8.7541178,
+		movingDegrees: elm$core$Maybe$Nothing,
+		movingSpeed: elm$core$Maybe$Nothing,
+		north: 1262727.23,
+		timestamp: elm$time$Time$millisToPosix(1530867187430)
+	},
+		{
+		accuracyAltitude: elm$core$Maybe$Nothing,
+		accuracyPos: 6,
+		altitude: elm$core$Maybe$Nothing,
+		distance: 10.61,
+		east: 2699115.75,
+		height: elm$core$Maybe$Nothing,
+		latitude: 47.507823,
+		locationKey: 'Winterthur',
+		longitude: 8.7541111,
+		movingDegrees: elm$core$Maybe$Nothing,
+		movingSpeed: elm$core$Maybe$Nothing,
+		north: 1262717.76,
+		timestamp: elm$time$Time$millisToPosix(1530867187431)
+	}
+	]);
+var author$project$Model$iniMyLocation = {
+	accuracyAltitude: elm$core$Maybe$Nothing,
+	accuracyPos: 22,
+	altitude: elm$core$Maybe$Nothing,
+	distance: 10.61,
+	east: 2699100.41,
+	height: elm$core$Maybe$Nothing,
+	latitude: 47.5078218,
+	locationKey: 'Winterthur',
+	longitude: 8.7541178,
+	movingDegrees: elm$core$Maybe$Nothing,
+	movingSpeed: elm$core$Maybe$Nothing,
+	north: 1262727.23,
+	timestamp: elm$time$Time$millisToPosix(1530867187430)
+};
+var elm$core$Basics$False = {$: 'False'};
+var elm$core$Basics$True = {$: 'True'};
+var author$project$Model$iniSettings = {checkDistance: true, meanMeasures: 5, showDiagram: false};
 var author$project$Model$platzspitz = _Utils_Tuple2(
 	'Platzspitz',
 	{altitude: 405.9, east: 2683154, latitude: 47.3802157, longitude: 8.5397823, north: 1248292});
@@ -5116,39 +5149,7 @@ var author$project$Model$iniModel = {
 			[author$project$Model$winti, author$project$Model$platzspitz])),
 	meanPosition: author$project$Model$iniMeanPosition,
 	meanPositions: _List_Nil,
-	measurements: _List_fromArray(
-		[
-			{
-			accuracyAltitude: elm$core$Maybe$Nothing,
-			accuracyPos: 22,
-			altitude: elm$core$Maybe$Nothing,
-			distance: 10.61,
-			east: 2699100.41,
-			height: elm$core$Maybe$Nothing,
-			latitude: 47.5078218,
-			locationKey: 'Winterthur',
-			longitude: 8.7541178,
-			movingDegrees: elm$core$Maybe$Nothing,
-			movingSpeed: elm$core$Maybe$Nothing,
-			north: 1262727.23,
-			timestamp: elm$time$Time$millisToPosix(1530867187430)
-		},
-			{
-			accuracyAltitude: elm$core$Maybe$Nothing,
-			accuracyPos: 6,
-			altitude: elm$core$Maybe$Nothing,
-			distance: 10.61,
-			east: 2699115.75,
-			height: elm$core$Maybe$Nothing,
-			latitude: 47.507823,
-			locationKey: 'Winterthur',
-			longitude: 8.7541111,
-			movingDegrees: elm$core$Maybe$Nothing,
-			movingSpeed: elm$core$Maybe$Nothing,
-			north: 1262717.76,
-			timestamp: elm$time$Time$millisToPosix(1530867187431)
-		}
-		]),
+	measurements: author$project$Model$iniMeasurements,
 	myLocation: author$project$Model$iniMyLocation,
 	projection: author$project$Model$LV95,
 	refLocation: author$project$Model$winti,
@@ -5558,8 +5559,59 @@ var author$project$Main$subscriptions = function (model) {
 			]));
 };
 var author$project$Geolocation$clearWatch = _Platform_outgoingPort('clearWatch', elm$core$Basics$identity);
-var elm$json$Json$Decode$decodeValue = _Json_run;
+var author$project$Model$Location = F8(
+	function (longitude, latitude, accuracyPos, altitude, accuracyAltitude, movingSpeed, movingDegrees, timestamp) {
+		return {accuracyAltitude: accuracyAltitude, accuracyPos: accuracyPos, altitude: altitude, latitude: latitude, longitude: longitude, movingDegrees: movingDegrees, movingSpeed: movingSpeed, timestamp: timestamp};
+	});
+var elm$json$Json$Decode$andThen = _Json_andThen;
+var elm$json$Json$Decode$field = _Json_decodeField;
+var elm$json$Json$Decode$float = _Json_decodeFloat;
 var elm$json$Json$Decode$int = _Json_decodeInt;
+var elm$json$Json$Decode$map8 = _Json_map8;
+var elm$json$Json$Decode$map = _Json_map1;
+var elm$json$Json$Decode$oneOf = _Json_oneOf;
+var elm$json$Json$Decode$succeed = _Json_succeed;
+var elm$json$Json$Decode$maybe = function (decoder) {
+	return elm$json$Json$Decode$oneOf(
+		_List_fromArray(
+			[
+				A2(elm$json$Json$Decode$map, elm$core$Maybe$Just, decoder),
+				elm$json$Json$Decode$succeed(elm$core$Maybe$Nothing)
+			]));
+};
+var author$project$Geolocation$decodeLocation = function () {
+	var timeDecoder = function (t) {
+		return elm$json$Json$Decode$succeed(
+			elm$time$Time$millisToPosix(t));
+	};
+	return A9(
+		elm$json$Json$Decode$map8,
+		author$project$Model$Location,
+		A2(elm$json$Json$Decode$field, 'longitude', elm$json$Json$Decode$float),
+		A2(elm$json$Json$Decode$field, 'latitude', elm$json$Json$Decode$float),
+		A2(elm$json$Json$Decode$field, 'accuracyPos', elm$json$Json$Decode$float),
+		A2(
+			elm$json$Json$Decode$field,
+			'altitude',
+			elm$json$Json$Decode$maybe(elm$json$Json$Decode$float)),
+		A2(
+			elm$json$Json$Decode$field,
+			'accuracyAltitude',
+			elm$json$Json$Decode$maybe(elm$json$Json$Decode$float)),
+		A2(
+			elm$json$Json$Decode$field,
+			'movingSpeed',
+			elm$json$Json$Decode$maybe(elm$json$Json$Decode$float)),
+		A2(
+			elm$json$Json$Decode$field,
+			'movingDegrees',
+			elm$json$Json$Decode$maybe(elm$json$Json$Decode$float)),
+		A2(
+			elm$json$Json$Decode$field,
+			'timestamp',
+			A2(elm$json$Json$Decode$andThen, timeDecoder, elm$json$Json$Decode$int)));
+}();
+var elm$json$Json$Decode$decodeValue = _Json_run;
 var author$project$Geolocation$decodeWatchId = function (jsid) {
 	var wId = A2(elm$json$Json$Decode$decodeValue, elm$json$Json$Decode$int, jsid);
 	if (wId.$ === 'Ok') {
@@ -5576,6 +5628,7 @@ var author$project$Geolocation$watch = _Platform_outgoingPort(
 		return elm$json$Json$Encode$null;
 	});
 var author$project$Model$WGS84 = {$: 'WGS84'};
+var elm$core$String$fromFloat = _String_fromNumber;
 var elm$json$Json$Encode$int = _Json_wrap;
 var author$project$Main$update = F2(
 	function (action, model) {
@@ -5602,7 +5655,33 @@ var author$project$Main$update = F2(
 						elm$json$Json$Encode$int(model.watchId)));
 			case 'LocationChange':
 				var jslocation = action.a;
-				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+				var loc = A2(elm$json$Json$Decode$decodeValue, author$project$Geolocation$decodeLocation, jslocation);
+				var buildMyLoc = function (resultLoc) {
+					return {accuracyAltitude: resultLoc.accuracyAltitude, accuracyPos: resultLoc.accuracyPos, altitude: resultLoc.altitude, distance: 0, east: 0, height: elm$core$Maybe$Nothing, latitude: resultLoc.latitude, locationKey: '', longitude: resultLoc.longitude, movingDegrees: resultLoc.movingDegrees, movingSpeed: resultLoc.movingSpeed, north: 0, timestamp: resultLoc.timestamp};
+				};
+				var newModel = function () {
+					if (loc.$ === 'Ok') {
+						var geoloc = loc.a;
+						return _Utils_update(
+							model,
+							{
+								error: 'geoloc: ' + elm$core$String$fromFloat(geoloc.longitude),
+								measurements: A2(
+									elm$core$List$cons,
+									buildMyLoc(geoloc),
+									model.measurements),
+								myLocation: buildMyLoc(geoloc)
+							});
+					} else {
+						var fehler = loc.a;
+						return _Utils_update(
+							model,
+							{
+								error: elm$json$Json$Decode$errorToString(fehler)
+							});
+					}
+				}();
+				return _Utils_Tuple2(newModel, elm$core$Platform$Cmd$none);
 			case 'LocationError':
 				var jserror = action.a;
 				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
@@ -5693,9 +5772,7 @@ var elm$core$List$filter = F2(
 			list);
 	});
 var elm$json$Json$Encode$string = _Json_wrap;
-var elm$json$Json$Decode$map = _Json_map1;
 var elm$json$Json$Decode$map2 = _Json_map2;
-var elm$json$Json$Decode$succeed = _Json_succeed;
 var elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
 	switch (handler.$) {
 		case 'Normal':
@@ -6109,7 +6186,6 @@ var mdgriffith$elm_ui$Internal$Model$Style = F2(
 	function (a, b) {
 		return {$: 'Style', a: a, b: b};
 	});
-var elm$core$String$fromFloat = _String_fromNumber;
 var mdgriffith$elm_ui$Internal$Model$formatColor = function (_n0) {
 	var red = _n0.a;
 	var green = _n0.b;
@@ -10473,7 +10549,7 @@ var mdgriffith$elm_ui$Element$image = F2(
 var author$project$Main$logo = A2(
 	mdgriffith$elm_ui$Element$image,
 	_List_Nil,
-	{description: 'Logo Kanton Zürich (Löwe)', src: './img/loewe.png'});
+	{description: 'Logo Kt.ZH', src: './img/loewe.png'});
 var elm$core$Basics$pow = _Basics_pow;
 var mdgriffith$elm_ui$Element$modular = F3(
 	function (normal, ratio, rescale) {
@@ -10736,7 +10812,7 @@ var elm$html$Html$Events$onClick = function (msg) {
 };
 var mdgriffith$elm_ui$Element$Events$onClick = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Attr, elm$html$Html$Events$onClick);
 var author$project$Main$coordSwitch = function (proj) {
-	var altImage = _Utils_eq(proj, author$project$Model$WGS84) ? {description: 'WGS84', src: './im/wgs84.png'} : {description: 'LV95', src: './im/lv95.png'};
+	var altImage = _Utils_eq(proj, author$project$Model$WGS84) ? {description: 'WGS84', src: '../img/wgs84.svg'} : {description: 'LV95', src: '../img/lv95.svg'};
 	return A2(
 		mdgriffith$elm_ui$Element$image,
 		_List_fromArray(
@@ -10747,6 +10823,7 @@ var author$project$Main$coordSwitch = function (proj) {
 		altImage);
 };
 var author$project$Main$swissNumbers = {decimalSeparator: '.', decimals: 2, negativePrefix: '-', negativeSuffix: '', positivePrefix: '', positiveSuffix: '', thousandSeparator: '\''};
+var author$project$Main$wgsNumbers = {decimalSeparator: '.', decimals: 8, negativePrefix: '-', negativeSuffix: '', positivePrefix: '', positiveSuffix: '', thousandSeparator: '\''};
 var cuducos$elm_format_number$Helpers$FormattedNumber = F5(
 	function (original, integers, decimals, prefix, suffix) {
 		return {decimals: decimals, integers: integers, original: original, prefix: prefix, suffix: suffix};
@@ -11147,6 +11224,17 @@ var cuducos$elm_format_number$FormatNumber$format = F2(
 	});
 var author$project$Main$showCoords = function (model) {
 	var refPos = model.refLocation.b;
+	var pos = _Utils_eq(model.projection, author$project$Model$LV95) ? {
+		locNord: A2(cuducos$elm_format_number$FormatNumber$format, author$project$Main$swissNumbers, model.myLocation.north),
+		locOst: A2(cuducos$elm_format_number$FormatNumber$format, author$project$Main$swissNumbers, model.myLocation.east),
+		refNord: A2(cuducos$elm_format_number$FormatNumber$format, author$project$Main$swissNumbers, refPos.north),
+		refOst: A2(cuducos$elm_format_number$FormatNumber$format, author$project$Main$swissNumbers, refPos.east)
+	} : {
+		locNord: A2(cuducos$elm_format_number$FormatNumber$format, author$project$Main$wgsNumbers, model.myLocation.latitude),
+		locOst: A2(cuducos$elm_format_number$FormatNumber$format, author$project$Main$wgsNumbers, model.myLocation.longitude),
+		refNord: A2(cuducos$elm_format_number$FormatNumber$format, author$project$Main$wgsNumbers, refPos.latitude),
+		refOst: A2(cuducos$elm_format_number$FormatNumber$format, author$project$Main$wgsNumbers, refPos.longitude)
+	};
 	return A2(
 		mdgriffith$elm_ui$Element$row,
 		_List_fromArray(
@@ -11169,20 +11257,16 @@ var author$project$Main$showCoords = function (model) {
 				_List_Nil,
 				_List_fromArray(
 					[
-						mdgriffith$elm_ui$Element$text(
-						'E ' + A2(cuducos$elm_format_number$FormatNumber$format, author$project$Main$swissNumbers, refPos.east)),
-						mdgriffith$elm_ui$Element$text(
-						'E ' + A2(cuducos$elm_format_number$FormatNumber$format, author$project$Main$swissNumbers, model.myLocation.east))
+						mdgriffith$elm_ui$Element$text('E ' + pos.refOst),
+						mdgriffith$elm_ui$Element$text('E ' + pos.locOst)
 					])),
 				A2(
 				mdgriffith$elm_ui$Element$column,
 				_List_Nil,
 				_List_fromArray(
 					[
-						mdgriffith$elm_ui$Element$text(
-						'N ' + A2(cuducos$elm_format_number$FormatNumber$format, author$project$Main$swissNumbers, refPos.north)),
-						mdgriffith$elm_ui$Element$text(
-						'N ' + A2(cuducos$elm_format_number$FormatNumber$format, author$project$Main$swissNumbers, model.myLocation.north))
+						mdgriffith$elm_ui$Element$text('N ' + pos.refNord),
+						mdgriffith$elm_ui$Element$text('N ' + pos.locNord)
 					]))
 			]));
 };
@@ -11615,8 +11699,16 @@ var author$project$Main$view = function (model) {
 				]),
 			_List_fromArray(
 				[
-					author$project$Main$showHeader,
-					author$project$Main$showMeasurements(model)
+					A2(
+					mdgriffith$elm_ui$Element$column,
+					_List_fromArray(
+						[mdgriffith$elm_ui$Element$centerX]),
+					_List_fromArray(
+						[
+							author$project$Main$showHeader,
+							author$project$Main$showMeasurements(model),
+							mdgriffith$elm_ui$Element$text(model.error)
+						]))
 				])));
 };
 var elm$browser$Browser$External = function (a) {
@@ -13539,7 +13631,6 @@ var elm$browser$Debugger$Metadata$Alias = F2(
 	function (args, tipe) {
 		return {args: args, tipe: tipe};
 	});
-var elm$json$Json$Decode$field = _Json_decodeField;
 var elm$json$Json$Decode$list = _Json_decodeList;
 var elm$json$Json$Decode$string = _Json_decodeString;
 var elm$browser$Debugger$Metadata$decodeAlias = A3(
