@@ -4627,7 +4627,7 @@ var author$project$Model$iniModel = {
 	bB: author$project$Model$iniMeasurements,
 	R: author$project$Model$iniMyLocation,
 	aB: 0,
-	a_: author$project$Model$winti,
+	a_: author$project$Model$platzspitz,
 	bX: author$project$Model$iniSettings,
 	aG: 0,
 	b6: 1

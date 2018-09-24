@@ -5152,7 +5152,7 @@ var author$project$Model$iniModel = {
 	measurements: author$project$Model$iniMeasurements,
 	myLocation: author$project$Model$iniMyLocation,
 	projection: author$project$Model$LV95,
-	refLocation: author$project$Model$winti,
+	refLocation: author$project$Model$platzspitz,
 	settings: author$project$Model$iniSettings,
 	watchId: 0,
 	zoomLevel: 1
@@ -10861,7 +10861,7 @@ var author$project$Main$showHeader = A2(
 							mdgriffith$elm_ui$Element$alignLeft,
 							mdgriffith$elm_ui$Element$Font$extraBold,
 							mdgriffith$elm_ui$Element$width(
-							mdgriffith$elm_ui$Element$fillPortion(3))
+							mdgriffith$elm_ui$Element$fillPortion(4))
 						]),
 					mdgriffith$elm_ui$Element$text('Kanton Zürich\nBaudirektion\nAmt für Raumentwicklung'))
 				])),
