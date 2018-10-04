@@ -4251,8 +4251,8 @@ function _Browser_getViewport()
 	return {
 		b4: _Browser_getScene(),
 		cb: {
-			aN: _Browser_window.pageXOffset,
-			aO: _Browser_window.pageYOffset,
+			aO: _Browser_window.pageXOffset,
+			aP: _Browser_window.pageYOffset,
 			Z: _Browser_doc.documentElement.clientWidth,
 			by: _Browser_doc.documentElement.clientHeight
 		}
@@ -4293,8 +4293,8 @@ function _Browser_getViewportOf(id)
 				by: node.scrollHeight
 			},
 			cb: {
-				aN: node.scrollLeft,
-				aO: node.scrollTop,
+				aO: node.scrollLeft,
+				aP: node.scrollTop,
 				Z: node.clientWidth,
 				by: node.clientHeight
 			}
@@ -4328,14 +4328,14 @@ function _Browser_getElement(id)
 		return {
 			b4: _Browser_getScene(),
 			cb: {
-				aN: x,
-				aO: y,
+				aO: x,
+				aP: y,
 				Z: _Browser_doc.documentElement.clientWidth,
 				by: _Browser_doc.documentElement.clientHeight
 			},
 			cL: {
-				aN: x + rect.left,
-				aO: y + rect.top,
+				aO: x + rect.left,
+				aP: y + rect.top,
 				Z: rect.width,
 				by: rect.height
 			}
@@ -4378,7 +4378,7 @@ var author$project$Model$GetTimeZone = function (a) {
 var author$project$Model$AboutPage = 0;
 var author$project$Model$LV95 = 0;
 var author$project$Model$Pause = 1;
-var author$project$Model$iniMeanPosition = {as: 0, aW: 0, ae: 0, ah: 0, a4: 0};
+var author$project$Model$iniMeanPosition = {as: 0, aX: 0, ae: 0, ah: 0, a4: 0};
 var elm$core$Basics$EQ = 1;
 var elm$core$Basics$LT = 0;
 var elm$core$Elm$JsArray$foldr = _JsArray_foldr;
@@ -4465,10 +4465,10 @@ var elm$core$Basics$True = 0;
 var author$project$Model$iniSettings = {bp: true, bK: 5, b7: false};
 var author$project$Model$platzspitz = _Utils_Tuple2(
 	'Platzspitz',
-	{as: 405.9, aW: 2683154, ae: 47.3802157, ah: 8.5397823, a4: 1248292});
+	{as: 408.36, aX: 2683256.46, ae: 47.378631, ah: 8.541108, a4: 1248117.48});
 var author$project$Model$winti = _Utils_Tuple2(
 	'Winterthur',
-	{as: 475.2, aW: 2699109, ae: 47.507765, ah: 8.7542368, a4: 1262721});
+	{as: 475.2, aX: 2699109, ae: 47.507765, ah: 8.7542368, a4: 1262721});
 var elm$core$Dict$RBEmpty_elm_builtin = {$: -2};
 var elm$core$Dict$empty = elm$core$Dict$RBEmpty_elm_builtin;
 var elm$core$Dict$Black = 1;
@@ -4619,7 +4619,7 @@ var elm$time$Time$Zone = F2(
 var elm$time$Time$utc = A2(elm$time$Time$Zone, 0, _List_Nil);
 var author$project$Model$iniModel = {
 	bk: 0,
-	aX: '',
+	aA: '',
 	bx: 1,
 	bI: elm$core$Dict$fromList(
 		_List_fromArray(
@@ -4632,7 +4632,7 @@ var author$project$Model$iniModel = {
 	b0: author$project$Model$platzspitz,
 	b5: author$project$Model$iniSettings,
 	dK: elm$time$Time$utc,
-	aM: 0,
+	aN: 0,
 	cf: 1
 };
 var elm$core$Basics$identity = function (x) {
@@ -5192,12 +5192,23 @@ var author$project$Main$subscriptions = function (model) {
 			]));
 };
 var author$project$Geolocation$clearWatch = _Platform_outgoingPort('clearWatch', elm$core$Basics$identity);
+var author$project$Model$JSGeoError = F2(
+	function (errcode, message) {
+		return {cM: errcode, c2: message};
+	});
+var elm$json$Json$Decode$field = _Json_decodeField;
+var elm$json$Json$Decode$map2 = _Json_map2;
+var elm$json$Json$Decode$string = _Json_decodeString;
+var author$project$Geolocation$decodeError = A3(
+	elm$json$Json$Decode$map2,
+	author$project$Model$JSGeoError,
+	A2(elm$json$Json$Decode$field, 'errcode', elm$json$Json$Decode$string),
+	A2(elm$json$Json$Decode$field, 'message', elm$json$Json$Decode$string));
 var author$project$Model$Location = F8(
 	function (longitude, latitude, accuracyPos, altitude, accuracyAltitude, movingSpeed, movingDegrees, timestamp) {
-		return {aq: accuracyAltitude, ar: accuracyPos, as: altitude, ae: latitude, ah: longitude, aE: movingDegrees, aF: movingSpeed, aK: timestamp};
+		return {aq: accuracyAltitude, ar: accuracyPos, as: altitude, ae: latitude, ah: longitude, aF: movingDegrees, aG: movingSpeed, aL: timestamp};
 	});
 var elm$json$Json$Decode$andThen = _Json_andThen;
-var elm$json$Json$Decode$field = _Json_decodeField;
 var elm$json$Json$Decode$float = _Json_decodeFloat;
 var elm$json$Json$Decode$int = _Json_decodeInt;
 var elm$json$Json$Decode$map8 = _Json_map8;
@@ -5276,7 +5287,7 @@ var author$project$Main$distanceToRef = F3(
 	function (east, north, refLoc) {
 		var ref = refLoc.b;
 		var dy = north - ref.a4;
-		var dx = east - ref.aW;
+		var dx = east - ref.aX;
 		return A2(
 			author$project$Main$runden,
 			elm$core$Basics$sqrt((dx * dx) + (dy * dy)),
@@ -5289,7 +5300,7 @@ var author$project$Main$wgsToMyLocation = F2(
 		var λ = ((location.ah * 3600) - 26782.5) / 10000;
 		var n = ((((1200147.07 + (308807.95 * φ)) + (3745.25 * A2(elm$core$Basics$pow, λ, 2))) + (76.63 * A2(elm$core$Basics$pow, φ, 2))) - ((194.56 * A2(elm$core$Basics$pow, λ, 2)) * φ)) + (119.79 * A2(elm$core$Basics$pow, φ, 3));
 		var movSpeed = function () {
-			var _n4 = location.aF;
+			var _n4 = location.aG;
 			if (!_n4.$) {
 				var m = _n4.a;
 				return elm$core$Maybe$Just(
@@ -5299,7 +5310,7 @@ var author$project$Main$wgsToMyLocation = F2(
 			}
 		}();
 		var movDegree = function () {
-			var _n3 = location.aE;
+			var _n3 = location.aF;
 			if (!_n3.$) {
 				var m = _n3.a;
 				return elm$core$Maybe$Just(
@@ -5343,15 +5354,15 @@ var author$project$Main$wgsToMyLocation = F2(
 			ar: A2(author$project$Main$runden, location.ar, 100),
 			as: alti,
 			bt: A3(author$project$Main$distanceToRef, e, n, model.b0),
-			aW: A2(author$project$Main$runden, e, 100),
+			aX: A2(author$project$Main$runden, e, 100),
 			by: h,
 			ae: A2(author$project$Main$runden, location.ae, 1000000),
 			bH: model.b0.a,
 			ah: A2(author$project$Main$runden, location.ah, 1000000),
-			aE: movDegree,
-			aF: movSpeed,
+			aF: movDegree,
+			aG: movSpeed,
 			a4: A2(author$project$Main$runden, n, 100),
-			aK: location.aK
+			aL: location.aL
 		};
 	});
 var author$project$Model$WGS84 = 1;
@@ -5380,16 +5391,16 @@ var author$project$Main$update = F2(
 						{bZ: 1}),
 					elm$core$Platform$Cmd$none);
 			case 2:
-				return (!model.aM) ? _Utils_Tuple2(
+				return (!model.aN) ? _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{a$: _List_Nil}),
 					author$project$Geolocation$watch(0)) : _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{aM: 0}),
+						{aN: 0}),
 					author$project$Geolocation$clearWatch(
-						elm$json$Json$Encode$int(model.aM)));
+						elm$json$Json$Encode$int(model.aN)));
 			case 3:
 				var jslocation = action.a;
 				var loc = A2(elm$json$Json$Decode$decodeValue, author$project$Geolocation$decodeLocation, jslocation);
@@ -5399,7 +5410,7 @@ var author$project$Main$update = F2(
 						return _Utils_update(
 							model,
 							{
-								aX: '',
+								aA: '',
 								a$: A2(elm$core$List$cons, geoloc, model.a$),
 								c4: elm$core$Maybe$Just(
 									A2(author$project$Main$wgsToMyLocation, model, geoloc))
@@ -5409,33 +5420,44 @@ var author$project$Main$update = F2(
 						return _Utils_update(
 							model,
 							{
-								aX: 'Fehler: ' + elm$json$Json$Decode$errorToString(fehler)
+								aA: 'Fehler... ' + elm$json$Json$Decode$errorToString(fehler)
 							});
 					}
 				}();
 				var buildMyLoc = function (resultLoc) {
-					return {aq: resultLoc.aq, ar: resultLoc.ar, as: resultLoc.as, bt: 0, aW: 0, by: elm$core$Maybe$Nothing, ae: resultLoc.ae, bH: '', ah: resultLoc.ah, aE: resultLoc.aE, aF: resultLoc.aF, a4: 0, aK: resultLoc.aK};
+					return {aq: resultLoc.aq, ar: resultLoc.ar, as: resultLoc.as, bt: 0, aX: 0, by: elm$core$Maybe$Nothing, ae: resultLoc.ae, bH: '', ah: resultLoc.ah, aF: resultLoc.aF, aG: resultLoc.aG, a4: 0, aL: resultLoc.aL};
 				};
 				return _Utils_Tuple2(newModel, elm$core$Platform$Cmd$none);
 			case 4:
 				var jserror = action.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{aX: 'Fehler ...'}),
-					elm$core$Platform$Cmd$none);
+				var err = A2(elm$json$Json$Decode$decodeValue, author$project$Geolocation$decodeError, jserror);
+				var newModel = function () {
+					if (!err.$) {
+						var error = err.a;
+						return _Utils_update(
+							model,
+							{aA: 'Fehler... ' + error.c2});
+					} else {
+						var fehler = err.a;
+						return _Utils_update(
+							model,
+							{
+								aA: 'Fehler... ' + elm$json$Json$Decode$errorToString(fehler)
+							});
+					}
+				}();
+				return _Utils_Tuple2(newModel, elm$core$Platform$Cmd$none);
 			default:
 				var jswatchid = action.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
-							aM: author$project$Geolocation$decodeWatchId(jswatchid)
+							aN: author$project$Geolocation$decodeWatchId(jswatchid)
 						}),
 					elm$core$Platform$Cmd$none);
 		}
 	});
-var elm$json$Json$Decode$map2 = _Json_map2;
 var elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
 	switch (handler.$) {
 		case 0:
@@ -5473,6 +5495,19 @@ var author$project$View$scaled = function (x) {
 	return elm$core$Basics$round(
 		A3(mdgriffith$elm_ui$Element$modular, 16, 1.25, x));
 };
+var elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var elm$core$String$length = _String_length;
+var elm$core$String$slice = _String_slice;
+var elm$core$String$right = F2(
+	function (n, string) {
+		return (n < 1) ? '' : A3(
+			elm$core$String$slice,
+			-n,
+			elm$core$String$length(string),
+			string);
+	});
 var elm$core$Basics$modBy = _Basics_modBy;
 var elm$time$Time$flooredDiv = F2(
 	function (numerator, denominator) {
@@ -5547,14 +5582,20 @@ var elm$time$Time$toSecond = F2(
 	});
 var author$project$View$toLocalTimeString = F2(
 	function (zone, time) {
-		return elm$core$String$fromInt(
-			A2(elm$time$Time$toHour, zone, time)) + (':' + (elm$core$String$fromInt(
-			A2(elm$time$Time$toMinute, zone, time)) + (':' + elm$core$String$fromInt(
-			A2(elm$time$Time$toSecond, zone, time)))));
+		return A2(
+			elm$core$String$right,
+			2,
+			'00' + elm$core$String$fromInt(
+				A2(elm$time$Time$toHour, zone, time))) + (':' + (A2(
+			elm$core$String$right,
+			2,
+			'00' + elm$core$String$fromInt(
+				A2(elm$time$Time$toMinute, zone, time))) + (':' + A2(
+			elm$core$String$right,
+			2,
+			'00' + elm$core$String$fromInt(
+				A2(elm$time$Time$toSecond, zone, time))))));
 	});
-var elm$core$Basics$negate = function (n) {
-	return -n;
-};
 var elm$core$String$fromFloat = _String_fromNumber;
 var mdgriffith$elm_ui$Internal$Model$Height = function (a) {
 	return {$: 8, a: a};
@@ -5578,7 +5619,7 @@ var mdgriffith$elm_ui$Internal$Flag$Field = F2(
 		return {$: 0, a: a, b: b};
 	});
 var mdgriffith$elm_ui$Internal$Flag$none = A2(mdgriffith$elm_ui$Internal$Flag$Field, 0, 0);
-var mdgriffith$elm_ui$Internal$Style$classes = {cg: 'a', aP: 'atv', ch: 'ab', ci: 'cx', cj: 'cy', ck: 'acb', cl: 'accx', cm: 'accy', cn: 'acr', bm: 'al', bn: 'ar', co: 'at', aQ: 'ah', aR: 'av', cq: 's', ct: 'bh', cu: 'b', cw: 'w7', cy: 'bd', cz: 'bdt', at: 'bn', cA: 'bs', au: 'cpe', cE: 'cp', cF: 'cpx', cG: 'cpy', t: 'c', aw: 'ctr', ax: 'cb', ay: 'ccx', u: 'ccy', ac: 'cl', az: 'cr', cI: 'ct', cJ: 'cptr', cK: 'ctxt', cQ: 'fcs', cR: 'g', cS: 'hbh', ad: 'hc', aZ: 'hf', bA: 'hfp', cV: 'hv', cX: 'ic', cZ: 'fr', c$: 'iml', c0: 'it', c1: 'i', c6: 'notxt', c7: 'ol', c9: 'or', I: 'oq', dd: 'oh', bS: 'pg', bT: 'p', de: 'ppe', dg: 'ui', y: 'r', di: 'sb', dj: 'sbx', dk: 'sby', dl: 'sbt', dn: 'e', $7: 'sev', dt: 'sk', k: 't', dw: 'tc', dx: 'w8', dy: 'w2', dz: 'w9', dA: 'tj', aJ: 'tja', dB: 'tl', dC: 'w3', dD: 'w5', dE: 'w4', dF: 'tr', dG: 'w6', dH: 'w1', dI: 'tun', ca: 'ts', M: 'clr', dO: 'u', bh: 'wc', cc: 'we', bi: 'wf', cd: 'wfp', bj: 'wrp'};
+var mdgriffith$elm_ui$Internal$Style$classes = {cg: 'a', aQ: 'atv', ch: 'ab', ci: 'cx', cj: 'cy', ck: 'acb', cl: 'accx', cm: 'accy', cn: 'acr', bm: 'al', bn: 'ar', co: 'at', aR: 'ah', aS: 'av', cq: 's', ct: 'bh', cu: 'b', cw: 'w7', cy: 'bd', cz: 'bdt', at: 'bn', cA: 'bs', au: 'cpe', cE: 'cp', cF: 'cpx', cG: 'cpy', t: 'c', aw: 'ctr', ax: 'cb', ay: 'ccx', u: 'ccy', ac: 'cl', az: 'cr', cI: 'ct', cJ: 'cptr', cK: 'ctxt', cQ: 'fcs', cR: 'g', cS: 'hbh', ad: 'hc', aZ: 'hf', bA: 'hfp', cV: 'hv', cX: 'ic', cZ: 'fr', c$: 'iml', c0: 'it', c1: 'i', c6: 'notxt', c7: 'ol', c9: 'or', I: 'oq', dd: 'oh', bS: 'pg', bT: 'p', de: 'ppe', dg: 'ui', y: 'r', di: 'sb', dj: 'sbx', dk: 'sby', dl: 'sbt', dn: 'e', $7: 'sev', dt: 'sk', k: 't', dw: 'tc', dx: 'w8', dy: 'w2', dz: 'w9', dA: 'tj', aK: 'tja', dB: 'tl', dC: 'w3', dD: 'w5', dE: 'w4', dF: 'tr', dG: 'w6', dH: 'w1', dI: 'tun', ca: 'ts', M: 'clr', dO: 'u', bh: 'wc', cc: 'we', bi: 'wf', cd: 'wfp', bj: 'wrp'};
 var mdgriffith$elm_ui$Internal$Model$columnClass = mdgriffith$elm_ui$Internal$Style$classes.cq + (' ' + mdgriffith$elm_ui$Internal$Style$classes.t);
 var mdgriffith$elm_ui$Internal$Model$gridClass = mdgriffith$elm_ui$Internal$Style$classes.cq + (' ' + mdgriffith$elm_ui$Internal$Style$classes.cR);
 var mdgriffith$elm_ui$Internal$Model$pageClass = mdgriffith$elm_ui$Internal$Style$classes.cq + (' ' + mdgriffith$elm_ui$Internal$Style$classes.bS);
@@ -6371,7 +6412,7 @@ var mdgriffith$elm_ui$Internal$Style$baseSheet = _List_fromArray(
 				A2(
 				mdgriffith$elm_ui$Internal$Style$Descriptor,
 				mdgriffith$elm_ui$Internal$Style$dot(
-					_Utils_ap(mdgriffith$elm_ui$Internal$Style$classes.aP, mdgriffith$elm_ui$Internal$Style$classes.M)) + ':active',
+					_Utils_ap(mdgriffith$elm_ui$Internal$Style$classes.aQ, mdgriffith$elm_ui$Internal$Style$classes.M)) + ':active',
 				_List_fromArray(
 					[
 						A2(mdgriffith$elm_ui$Internal$Style$Prop, 'opacity', '0')
@@ -6379,7 +6420,7 @@ var mdgriffith$elm_ui$Internal$Style$baseSheet = _List_fromArray(
 				A2(
 				mdgriffith$elm_ui$Internal$Style$Descriptor,
 				mdgriffith$elm_ui$Internal$Style$dot(
-					_Utils_ap(mdgriffith$elm_ui$Internal$Style$classes.aP, mdgriffith$elm_ui$Internal$Style$classes.I)) + ':active',
+					_Utils_ap(mdgriffith$elm_ui$Internal$Style$classes.aQ, mdgriffith$elm_ui$Internal$Style$classes.I)) + ':active',
 				_List_fromArray(
 					[
 						A2(mdgriffith$elm_ui$Internal$Style$Prop, 'opacity', '1')
@@ -7566,7 +7607,7 @@ var mdgriffith$elm_ui$Internal$Style$baseSheet = _List_fromArray(
 					])),
 				A2(
 				mdgriffith$elm_ui$Internal$Style$Descriptor,
-				mdgriffith$elm_ui$Internal$Style$dot(mdgriffith$elm_ui$Internal$Style$classes.aJ),
+				mdgriffith$elm_ui$Internal$Style$dot(mdgriffith$elm_ui$Internal$Style$classes.aK),
 				_List_fromArray(
 					[
 						A2(mdgriffith$elm_ui$Internal$Style$Prop, 'text-align', 'justify-all')
@@ -8404,8 +8445,8 @@ var mdgriffith$elm_ui$Internal$Model$toStyleSheetString = F2(
 				return _Utils_update(
 					rendered,
 					{
-						aH: _Utils_ap(
-							rendered.aH,
+						aI: _Utils_ap(
+							rendered.aI,
 							A2(renderStyleRule, style, elm$core$Maybe$Nothing)),
 						an: function () {
 							var _n14 = renderTopLevels(style);
@@ -8421,10 +8462,10 @@ var mdgriffith$elm_ui$Internal$Model$toStyleSheetString = F2(
 		var _n13 = A3(
 			elm$core$List$foldl,
 			combine,
-			{aH: '', an: ''},
+			{aI: '', an: ''},
 			stylesheet);
 		var topLevel = _n13.an;
-		var rules = _n13.aH;
+		var rules = _n13.aI;
 		return _Utils_ap(topLevel, rules);
 	});
 var mdgriffith$elm_ui$Internal$Model$toStyleSheet = F2(
@@ -8938,21 +8979,21 @@ var mdgriffith$elm_ui$Internal$Model$addNodeName = F2(
 var mdgriffith$elm_ui$Internal$Model$alignXName = function (align) {
 	switch (align) {
 		case 0:
-			return mdgriffith$elm_ui$Internal$Style$classes.aQ + (' ' + mdgriffith$elm_ui$Internal$Style$classes.bm);
+			return mdgriffith$elm_ui$Internal$Style$classes.aR + (' ' + mdgriffith$elm_ui$Internal$Style$classes.bm);
 		case 2:
-			return mdgriffith$elm_ui$Internal$Style$classes.aQ + (' ' + mdgriffith$elm_ui$Internal$Style$classes.bn);
+			return mdgriffith$elm_ui$Internal$Style$classes.aR + (' ' + mdgriffith$elm_ui$Internal$Style$classes.bn);
 		default:
-			return mdgriffith$elm_ui$Internal$Style$classes.aQ + (' ' + mdgriffith$elm_ui$Internal$Style$classes.ci);
+			return mdgriffith$elm_ui$Internal$Style$classes.aR + (' ' + mdgriffith$elm_ui$Internal$Style$classes.ci);
 	}
 };
 var mdgriffith$elm_ui$Internal$Model$alignYName = function (align) {
 	switch (align) {
 		case 0:
-			return mdgriffith$elm_ui$Internal$Style$classes.aR + (' ' + mdgriffith$elm_ui$Internal$Style$classes.co);
+			return mdgriffith$elm_ui$Internal$Style$classes.aS + (' ' + mdgriffith$elm_ui$Internal$Style$classes.co);
 		case 2:
-			return mdgriffith$elm_ui$Internal$Style$classes.aR + (' ' + mdgriffith$elm_ui$Internal$Style$classes.ch);
+			return mdgriffith$elm_ui$Internal$Style$classes.aS + (' ' + mdgriffith$elm_ui$Internal$Style$classes.ch);
 		default:
-			return mdgriffith$elm_ui$Internal$Style$classes.aR + (' ' + mdgriffith$elm_ui$Internal$Style$classes.cj);
+			return mdgriffith$elm_ui$Internal$Style$classes.aS + (' ' + mdgriffith$elm_ui$Internal$Style$classes.cj);
 	}
 };
 var mdgriffith$elm_ui$Internal$Model$FullTransform = F4(
@@ -10323,7 +10364,7 @@ var author$project$View$showAccuracy = function (model) {
 		var _n1 = model.c4;
 		if (!_n1.$) {
 			var loc = _n1.a;
-			return A2(author$project$View$toLocalTimeString, model.dK, loc.aK);
+			return A2(author$project$View$toLocalTimeString, model.dK, loc.aL);
 		} else {
 			return '';
 		}
@@ -10379,10 +10420,10 @@ var author$project$View$showAccuracy = function (model) {
 					]))
 			]));
 };
-var author$project$View$secNumbers = {aT: '.', aU: 2, a2: '-', a3: '', a6: '', a7: '', bg: '\''};
+var author$project$View$secNumbers = {aU: '.', aV: 2, a2: '-', a3: '', a6: '', a7: '', bg: '\''};
 var cuducos$elm_format_number$Helpers$FormattedNumber = F5(
 	function (original, integers, decimals, prefix, suffix) {
-		return {aU: decimals, a_: integers, bR: original, aG: prefix, aI: suffix};
+		return {aV: decimals, a_: integers, bR: original, aH: prefix, aJ: suffix};
 	});
 var cuducos$elm_format_number$Helpers$Negative = 2;
 var cuducos$elm_format_number$Helpers$Positive = 0;
@@ -10402,22 +10443,12 @@ var cuducos$elm_format_number$Helpers$classify = function (formatted) {
 				elm$core$List$append,
 				formatted.a_,
 				elm$core$List$singleton(
-					A2(elm$core$Maybe$withDefault, '', formatted.aU)))));
+					A2(elm$core$Maybe$withDefault, '', formatted.aV)))));
 	return onlyZeros ? 1 : ((formatted.bR < 0) ? 2 : 0);
 };
-var elm$core$String$slice = _String_slice;
 var elm$core$String$dropRight = F2(
 	function (n, string) {
 		return (n < 1) ? string : A3(elm$core$String$slice, 0, -n, string);
-	});
-var elm$core$String$length = _String_length;
-var elm$core$String$right = F2(
-	function (n, string) {
-		return (n < 1) ? '' : A3(
-			elm$core$String$slice,
-			-n,
-			elm$core$String$length(string),
-			string);
 	});
 var cuducos$elm_format_number$Helpers$splitThousands = function (integers) {
 	var reversedSplitThousands = function (value) {
@@ -10713,7 +10744,7 @@ var cuducos$elm_format_number$Helpers$parse = F2(
 		var parts = A2(
 			elm$core$String$split,
 			'.',
-			A2(myrho$elm_round$Round$round, locale.aU, original));
+			A2(myrho$elm_round$Round$round, locale.aV, original));
 		var integers = cuducos$elm_format_number$Helpers$splitThousands(
 			A2(
 				elm$core$String$filter,
@@ -10730,11 +10761,11 @@ var cuducos$elm_format_number$Helpers$parse = F2(
 			case 2:
 				return _Utils_update(
 					partial,
-					{aG: locale.a2, aI: locale.a3});
+					{aH: locale.a2, aJ: locale.a3});
 			case 0:
 				return _Utils_update(
 					partial,
-					{aG: locale.a6, aI: locale.a7});
+					{aH: locale.a6, aJ: locale.a7});
 			default:
 				return partial;
 		}
@@ -10743,17 +10774,17 @@ var cuducos$elm_format_number$Helpers$stringfy = F2(
 	function (locale, formatted) {
 		var integers = A2(elm$core$String$join, locale.bg, formatted.a_);
 		var decimals = function () {
-			var _n0 = formatted.aU;
+			var _n0 = formatted.aV;
 			if (!_n0.$) {
 				var digits = _n0.a;
-				return _Utils_ap(locale.aT, digits);
+				return _Utils_ap(locale.aU, digits);
 			} else {
 				return '';
 			}
 		}();
 		return elm$core$String$concat(
 			_List_fromArray(
-				[formatted.aG, integers, decimals, formatted.aI]));
+				[formatted.aH, integers, decimals, formatted.aJ]));
 	});
 var cuducos$elm_format_number$FormatNumber$format = F2(
 	function (locale, number_) {
@@ -10767,9 +10798,15 @@ var author$project$View$buildDegMinSec = function (decDegree) {
 	var grad = decDegree | 0;
 	var min = ((decDegree * 60) - (grad * 60)) | 0;
 	var sec = ((decDegree * 3600) - (grad * 3600)) - (min * 60);
-	return elm$core$String$fromInt(grad) + ('° ' + (elm$core$String$fromInt(min) + ('\' ' + (A2(cuducos$elm_format_number$FormatNumber$format, author$project$View$secNumbers, sec) + '\"'))));
+	return elm$core$String$fromInt(grad) + ('° ' + (A2(
+		elm$core$String$right,
+		2,
+		'0' + elm$core$String$fromInt(min)) + ('\' ' + (A2(
+		elm$core$String$right,
+		5,
+		'0' + A2(cuducos$elm_format_number$FormatNumber$format, author$project$View$secNumbers, sec)) + '\"'))));
 };
-var author$project$View$swissNumbers = {aT: '.', aU: 2, a2: '-', a3: '', a6: '', a7: '', bg: '\''};
+var author$project$View$swissNumbers = {aU: '.', aV: 2, a2: '-', a3: '', a6: '', a7: '', bg: '\''};
 var author$project$View$showCoords = function (model) {
 	var refPos = model.b0.b;
 	var getLocNorth = function () {
@@ -10803,7 +10840,7 @@ var author$project$View$showCoords = function (model) {
 		var _n0 = model.c4;
 		if (!_n0.$) {
 			var loc = _n0.a;
-			return A2(cuducos$elm_format_number$FormatNumber$format, author$project$View$swissNumbers, loc.aW);
+			return A2(cuducos$elm_format_number$FormatNumber$format, author$project$View$swissNumbers, loc.aX);
 		} else {
 			return '';
 		}
@@ -10812,7 +10849,7 @@ var author$project$View$showCoords = function (model) {
 		S: getLocNorth,
 		T: getLocEast,
 		K: A2(cuducos$elm_format_number$FormatNumber$format, author$project$View$swissNumbers, refPos.a4),
-		L: A2(cuducos$elm_format_number$FormatNumber$format, author$project$View$swissNumbers, refPos.aW)
+		L: A2(cuducos$elm_format_number$FormatNumber$format, author$project$View$swissNumbers, refPos.aX)
 	} : {
 		S: getLocLat,
 		T: getLocLon,
@@ -11121,7 +11158,7 @@ var elm$html$Html$Attributes$src = function (url) {
 var mdgriffith$elm_ui$Element$image = F2(
 	function (attrs, _n0) {
 		var src = _n0.bb;
-		var description = _n0.aV;
+		var description = _n0.aW;
 		var imageAttributes = A2(
 			elm$core$List$filter,
 			function (a) {
@@ -11169,7 +11206,7 @@ var author$project$View$logo = A2(
 			mdgriffith$elm_ui$Element$width(
 			mdgriffith$elm_ui$Element$fillPortion(1))
 		]),
-	{aV: 'Logo Kt.ZH', bb: './img/loewe.png'});
+	{aW: 'Logo Kt.ZH', bb: './img/loewe.png'});
 var mdgriffith$elm_ui$Element$Font$extraBold = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$fontWeight, mdgriffith$elm_ui$Internal$Style$classes.dx);
 var author$project$View$showHeader = A2(
 	mdgriffith$elm_ui$Element$row,
@@ -11195,7 +11232,7 @@ var author$project$View$showHeader = A2(
 var author$project$View$gbParams = function (model) {
 	var refPos = model.b0.b;
 	var buildPos = function (myloc) {
-		return {S: myloc.a4, T: myloc.aW, K: refPos.a4, L: refPos.aW};
+		return {S: myloc.a4, T: myloc.aX, K: refPos.a4, L: refPos.aX};
 	};
 	var pos = function () {
 		var _n0 = model.c4;
@@ -11218,8 +11255,8 @@ var elm$html$Html$Attributes$href = function (url) {
 var elm$html$Html$Attributes$rel = _VirtualDom_attribute('rel');
 var mdgriffith$elm_ui$Element$link = F2(
 	function (attrs, _n0) {
-		var url = _n0.aL;
-		var label = _n0.aB;
+		var url = _n0.aM;
+		var label = _n0.aC;
 		return A4(
 			mdgriffith$elm_ui$Internal$Model$element,
 			mdgriffith$elm_ui$Internal$Model$asEl,
@@ -11248,12 +11285,12 @@ var mdgriffith$elm_ui$Element$link = F2(
 	});
 var mdgriffith$elm_ui$Element$Font$underline = mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.dO);
 var author$project$View$showLinks = function (model) {
-	var rowConfig2 = {aB: 'hier', be: 'Erfahren sie ', bf: ' mehr über den Kontrollpunkt', aL: 'https://are.zh.ch/internet/baudirektion/are/de/geoinformation/Themen/amtliche_vermessung.html#grundlagen'};
+	var rowConfig2 = {aC: 'hier', be: 'Erfahren Sie ', bf: ' mehr über den Kontrollpunkt', aM: 'https://are.zh.ch/kontrollpunkt'};
 	var rowConfig1 = {
-		aB: 'Kartenansicht',
+		aC: 'Kartenansicht',
 		be: '',
 		bf: ' Ihres Standortes',
-		aL: 'https://maps.zh.ch/?' + author$project$View$gbParams(model)
+		aM: 'https://maps.zh.ch/?' + author$project$View$gbParams(model)
 	};
 	var buildRow = function (cfg) {
 		return A2(
@@ -11284,8 +11321,8 @@ var author$project$View$showLinks = function (model) {
 									mdgriffith$elm_ui$Element$Font$underline
 								]),
 							{
-								aB: mdgriffith$elm_ui$Element$text(cfg.aB),
-								aL: cfg.aL
+								aC: mdgriffith$elm_ui$Element$text(cfg.aC),
+								aM: cfg.aM
 							}),
 							mdgriffith$elm_ui$Element$text(cfg.bf)
 						]))
@@ -11326,13 +11363,13 @@ var avh4$elm_color$Color$toRgba = function (_n0) {
 	var g = _n0.b;
 	var b = _n0.c;
 	var a = _n0.d;
-	return {O: a, aS: b, aY: g, a9: r};
+	return {O: a, aT: b, aY: g, a9: r};
 };
 var danmarcab$material_icons$Material$Icons$Internal$toRgbaString = function (color) {
 	var _n0 = avh4$elm_color$Color$toRgba(color);
 	var red = _n0.a9;
 	var green = _n0.aY;
-	var blue = _n0.aS;
+	var blue = _n0.aT;
 	var alpha = _n0.O;
 	return 'rgba(' + (elm$core$String$fromInt(
 		elm$core$Basics$round(255 * red)) + (',' + (elm$core$String$fromInt(
@@ -11542,7 +11579,7 @@ var author$project$View$showTitle = A2(
 			]),
 		_List_fromArray(
 			[
-				mdgriffith$elm_ui$Element$text('Kontrollpunkt für mobile Navigation')
+				mdgriffith$elm_ui$Element$text('Kontrollpunkt für mobile Geräte')
 			])));
 var mdgriffith$elm_ui$Element$Font$alignRight = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$fontAlignment, mdgriffith$elm_ui$Internal$Style$classes.dF);
 var author$project$View$showProjLabel = A2(
@@ -11592,7 +11629,7 @@ var author$project$Model$ToggleProjection = function (a) {
 	return {$: 1, a: a};
 };
 var author$project$View$showProjSwitch = function (proj) {
-	var altImage = (proj === 1) ? {aV: 'WGS84', bb: './img/wgs84.svg'} : {aV: 'LV95', bb: './img/lv95.svg'};
+	var altImage = (proj === 1) ? {aW: 'WGS84', bb: './img/wgs84.svg'} : {aW: 'LV95', bb: './img/lv95.svg'};
 	return A2(
 		mdgriffith$elm_ui$Element$row,
 		_List_fromArray(
@@ -11674,7 +11711,7 @@ var mdgriffith$elm_ui$Element$padding = function (x) {
 			x));
 };
 var author$project$View$showView = function (model) {
-	var gpsOn = (!model.aM) ? false : true;
+	var gpsOn = (!model.aN) ? false : true;
 	return A2(
 		mdgriffith$elm_ui$Element$column,
 		_List_fromArray(
@@ -11694,7 +11731,7 @@ var author$project$View$showView = function (model) {
 						author$project$View$showHeader,
 						author$project$View$showTitle,
 						author$project$View$showStartStopGPS(gpsOn),
-						author$project$View$showError(model.aX),
+						author$project$View$showError(model.aA),
 						author$project$View$showDistanceTitle,
 						author$project$View$showDistanceBox(model.c4),
 						author$project$View$showSubtitle('Projektion'),
@@ -11703,7 +11740,7 @@ var author$project$View$showView = function (model) {
 						author$project$View$showCoords(model),
 						author$project$View$showSubtitle('Genauigkeit'),
 						author$project$View$showAccuracy(model),
-						author$project$View$showSubtitle('Und wo stehen Sie?'),
+						author$project$View$showSubtitle('Wo stehen Sie?'),
 						author$project$View$showLinks(model),
 						author$project$View$showFooter
 					]))

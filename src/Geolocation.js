@@ -36,13 +36,13 @@ function Geolocation_port_init(elmApp){
 
 	// ****** Ports from elm (subscriptions)
 	elmApp.ports.watch.subscribe(function() {
-        console.log("got from Elm: watch");
+        //console.log("got from Elm: watch");
         watchID = navigator.geolocation.watchPosition(GeolocationState.geo_success, GeolocationState.geo_error, geo_options);
         GeolocationState.geo_id(watchID);
     });
 
     elmApp.ports.clearWatch.subscribe(function (watchId) {
-        console.log("got from Elm: watchID = ", watchId);
+        //console.log("got from Elm: watchID = ", watchId);
         navigator.geolocation.clearWatch(watchID);
     });
 }

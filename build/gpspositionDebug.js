@@ -4988,7 +4988,7 @@ var elm$core$Basics$True = {$: 'True'};
 var author$project$Model$iniSettings = {checkDistance: true, meanMeasures: 5, showDiagram: false};
 var author$project$Model$platzspitz = _Utils_Tuple2(
 	'Platzspitz',
-	{altitude: 405.9, east: 2683154, latitude: 47.3802157, longitude: 8.5397823, north: 1248292});
+	{altitude: 408.36, east: 2683256.46, latitude: 47.378631, longitude: 8.541108, north: 1248117.48});
 var author$project$Model$winti = _Utils_Tuple2(
 	'Winterthur',
 	{altitude: 475.2, east: 2699109, latitude: 47.507765, longitude: 8.7542368, north: 1262721});
@@ -5719,12 +5719,23 @@ var author$project$Main$subscriptions = function (model) {
 			]));
 };
 var author$project$Geolocation$clearWatch = _Platform_outgoingPort('clearWatch', elm$core$Basics$identity);
+var author$project$Model$JSGeoError = F2(
+	function (errcode, message) {
+		return {errcode: errcode, message: message};
+	});
+var elm$json$Json$Decode$field = _Json_decodeField;
+var elm$json$Json$Decode$map2 = _Json_map2;
+var elm$json$Json$Decode$string = _Json_decodeString;
+var author$project$Geolocation$decodeError = A3(
+	elm$json$Json$Decode$map2,
+	author$project$Model$JSGeoError,
+	A2(elm$json$Json$Decode$field, 'errcode', elm$json$Json$Decode$string),
+	A2(elm$json$Json$Decode$field, 'message', elm$json$Json$Decode$string));
 var author$project$Model$Location = F8(
 	function (longitude, latitude, accuracyPos, altitude, accuracyAltitude, movingSpeed, movingDegrees, timestamp) {
 		return {accuracyAltitude: accuracyAltitude, accuracyPos: accuracyPos, altitude: altitude, latitude: latitude, longitude: longitude, movingDegrees: movingDegrees, movingSpeed: movingSpeed, timestamp: timestamp};
 	});
 var elm$json$Json$Decode$andThen = _Json_andThen;
-var elm$json$Json$Decode$field = _Json_decodeField;
 var elm$json$Json$Decode$float = _Json_decodeFloat;
 var elm$json$Json$Decode$int = _Json_decodeInt;
 var elm$json$Json$Decode$map8 = _Json_map8;
@@ -5938,7 +5949,7 @@ var author$project$Main$update = F2(
 						return _Utils_update(
 							model,
 							{
-								error: 'Fehler: ' + elm$json$Json$Decode$errorToString(fehler)
+								error: 'Fehler... ' + elm$json$Json$Decode$errorToString(fehler)
 							});
 					}
 				}();
@@ -5948,11 +5959,23 @@ var author$project$Main$update = F2(
 				return _Utils_Tuple2(newModel, elm$core$Platform$Cmd$none);
 			case 'LocationError':
 				var jserror = action.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{error: 'Fehler ...'}),
-					elm$core$Platform$Cmd$none);
+				var err = A2(elm$json$Json$Decode$decodeValue, author$project$Geolocation$decodeError, jserror);
+				var newModel = function () {
+					if (err.$ === 'Ok') {
+						var error = err.a;
+						return _Utils_update(
+							model,
+							{error: 'Fehler... ' + error.message});
+					} else {
+						var fehler = err.a;
+						return _Utils_update(
+							model,
+							{
+								error: 'Fehler... ' + elm$json$Json$Decode$errorToString(fehler)
+							});
+					}
+				}();
+				return _Utils_Tuple2(newModel, elm$core$Platform$Cmd$none);
 			default:
 				var jswatchid = action.a;
 				return _Utils_Tuple2(
@@ -5964,7 +5987,6 @@ var author$project$Main$update = F2(
 					elm$core$Platform$Cmd$none);
 		}
 	});
-var elm$json$Json$Decode$map2 = _Json_map2;
 var elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
 	switch (handler.$) {
 		case 'Normal':
@@ -6002,6 +6024,19 @@ var author$project$View$scaled = function (x) {
 	return elm$core$Basics$round(
 		A3(mdgriffith$elm_ui$Element$modular, 16, 1.25, x));
 };
+var elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var elm$core$String$length = _String_length;
+var elm$core$String$slice = _String_slice;
+var elm$core$String$right = F2(
+	function (n, string) {
+		return (n < 1) ? '' : A3(
+			elm$core$String$slice,
+			-n,
+			elm$core$String$length(string),
+			string);
+	});
 var elm$core$Basics$modBy = _Basics_modBy;
 var elm$time$Time$flooredDiv = F2(
 	function (numerator, denominator) {
@@ -6076,14 +6111,20 @@ var elm$time$Time$toSecond = F2(
 	});
 var author$project$View$toLocalTimeString = F2(
 	function (zone, time) {
-		return elm$core$String$fromInt(
-			A2(elm$time$Time$toHour, zone, time)) + (':' + (elm$core$String$fromInt(
-			A2(elm$time$Time$toMinute, zone, time)) + (':' + elm$core$String$fromInt(
-			A2(elm$time$Time$toSecond, zone, time)))));
+		return A2(
+			elm$core$String$right,
+			2,
+			'00' + elm$core$String$fromInt(
+				A2(elm$time$Time$toHour, zone, time))) + (':' + (A2(
+			elm$core$String$right,
+			2,
+			'00' + elm$core$String$fromInt(
+				A2(elm$time$Time$toMinute, zone, time))) + (':' + A2(
+			elm$core$String$right,
+			2,
+			'00' + elm$core$String$fromInt(
+				A2(elm$time$Time$toSecond, zone, time))))));
 	});
-var elm$core$Basics$negate = function (n) {
-	return -n;
-};
 var elm$core$String$fromFloat = _String_fromNumber;
 var mdgriffith$elm_ui$Internal$Model$Height = function (a) {
 	return {$: 'Height', a: a};
@@ -10953,19 +10994,9 @@ var cuducos$elm_format_number$Helpers$classify = function (formatted) {
 					A2(elm$core$Maybe$withDefault, '', formatted.decimals)))));
 	return onlyZeros ? cuducos$elm_format_number$Helpers$Zero : ((formatted.original < 0) ? cuducos$elm_format_number$Helpers$Negative : cuducos$elm_format_number$Helpers$Positive);
 };
-var elm$core$String$slice = _String_slice;
 var elm$core$String$dropRight = F2(
 	function (n, string) {
 		return (n < 1) ? string : A3(elm$core$String$slice, 0, -n, string);
-	});
-var elm$core$String$length = _String_length;
-var elm$core$String$right = F2(
-	function (n, string) {
-		return (n < 1) ? '' : A3(
-			elm$core$String$slice,
-			-n,
-			elm$core$String$length(string),
-			string);
 	});
 var cuducos$elm_format_number$Helpers$splitThousands = function (integers) {
 	var reversedSplitThousands = function (value) {
@@ -11329,7 +11360,13 @@ var author$project$View$buildDegMinSec = function (decDegree) {
 	var grad = decDegree | 0;
 	var min = ((decDegree * 60) - (grad * 60)) | 0;
 	var sec = ((decDegree * 3600) - (grad * 3600)) - (min * 60);
-	return elm$core$String$fromInt(grad) + ('° ' + (elm$core$String$fromInt(min) + ('\' ' + (A2(cuducos$elm_format_number$FormatNumber$format, author$project$View$secNumbers, sec) + '\"'))));
+	return elm$core$String$fromInt(grad) + ('° ' + (A2(
+		elm$core$String$right,
+		2,
+		'0' + elm$core$String$fromInt(min)) + ('\' ' + (A2(
+		elm$core$String$right,
+		5,
+		'0' + A2(cuducos$elm_format_number$FormatNumber$format, author$project$View$secNumbers, sec)) + '\"'))));
 };
 var author$project$View$swissNumbers = {decimalSeparator: '.', decimals: 2, negativePrefix: '-', negativeSuffix: '', positivePrefix: '', positiveSuffix: '', thousandSeparator: '\''};
 var author$project$View$showCoords = function (model) {
@@ -11810,7 +11847,7 @@ var mdgriffith$elm_ui$Element$link = F2(
 	});
 var mdgriffith$elm_ui$Element$Font$underline = mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.underline);
 var author$project$View$showLinks = function (model) {
-	var rowConfig2 = {label: 'hier', text1: 'Erfahren sie ', text2: ' mehr über den Kontrollpunkt', url: 'https://are.zh.ch/internet/baudirektion/are/de/geoinformation/Themen/amtliche_vermessung.html#grundlagen'};
+	var rowConfig2 = {label: 'hier', text1: 'Erfahren Sie ', text2: ' mehr über den Kontrollpunkt', url: 'https://are.zh.ch/kontrollpunkt'};
 	var rowConfig1 = {
 		label: 'Kartenansicht',
 		text1: '',
@@ -12104,7 +12141,7 @@ var author$project$View$showTitle = A2(
 			]),
 		_List_fromArray(
 			[
-				mdgriffith$elm_ui$Element$text('Kontrollpunkt für mobile Navigation')
+				mdgriffith$elm_ui$Element$text('Kontrollpunkt für mobile Geräte')
 			])));
 var mdgriffith$elm_ui$Element$Font$alignRight = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$fontAlignment, mdgriffith$elm_ui$Internal$Style$classes.textRight);
 var author$project$View$showProjLabel = A2(
@@ -12265,7 +12302,7 @@ var author$project$View$showView = function (model) {
 						author$project$View$showCoords(model),
 						author$project$View$showSubtitle('Genauigkeit'),
 						author$project$View$showAccuracy(model),
-						author$project$View$showSubtitle('Und wo stehen Sie?'),
+						author$project$View$showSubtitle('Wo stehen Sie?'),
 						author$project$View$showLinks(model),
 						author$project$View$showFooter
 					]))
@@ -14367,7 +14404,6 @@ var elm$browser$Debugger$Metadata$Alias = F2(
 		return {args: args, tipe: tipe};
 	});
 var elm$json$Json$Decode$list = _Json_decodeList;
-var elm$json$Json$Decode$string = _Json_decodeString;
 var elm$browser$Debugger$Metadata$decodeAlias = A3(
 	elm$json$Json$Decode$map2,
 	elm$browser$Debugger$Metadata$Alias,
