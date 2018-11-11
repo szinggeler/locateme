@@ -5571,7 +5571,7 @@ var author$project$Model$iniWinSize = function (flags) {
 };
 var author$project$Model$platzspitz = _Utils_Tuple2(
 	'Platzspitz',
-	{altitude: 405.9, east: 2683154, latitude: 47.3802157, longitude: 8.5397823, north: 1248292});
+	{altitude: 408.36, east: 2683256.46, latitude: 47.378631, longitude: 8.541108, north: 1248117.48});
 var author$project$Model$winti = _Utils_Tuple2(
 	'Winterthur',
 	{altitude: 475.2, east: 2699109, latitude: 47.507765, longitude: 8.7542368, north: 1262721});
@@ -10513,7 +10513,10 @@ var author$project$Main$update = F2(
 							});
 					}
 				}();
-				return _Utils_Tuple2(newModel, elm$core$Platform$Cmd$none);
+				return _Utils_Tuple2(
+					newModel,
+					author$project$PortOl$setOlConfig(
+						author$project$Main$buildOlMapConfig(newModel)));
 			case 'LocationError':
 				var jserror = msg.a;
 				var err = A2(elm$json$Json$Decode$decodeValue, author$project$Geolocation$decodeError, jserror);
@@ -10559,9 +10562,8 @@ var author$project$Main$update = F2(
 					elm$core$Platform$Cmd$batch(
 						_List_fromArray(
 							[
-								author$project$Geolocation$clearWatch(
-								elm$json$Json$Encode$int(model.watchId)),
-								author$project$Geolocation$watch(_Utils_Tuple0)
+								_Utils_eq(model.geoLocState, author$project$Model$Track) ? author$project$Geolocation$watch(_Utils_Tuple0) : author$project$Geolocation$clearWatch(
+								elm$json$Json$Encode$int(model.watchId))
 							])));
 			case 'SetGeoLocState':
 				var newState = msg.a;
@@ -10570,16 +10572,32 @@ var author$project$Main$update = F2(
 					{geoLocState: newState, meanPosition: author$project$Model$iniMeanPosition, meanPositions: _List_Nil, measurements: _List_Nil, myLocation: author$project$Model$iniMyLocation}) : _Utils_update(
 					model,
 					{geoLocState: newState});
-				var newCmd = _Utils_eq(newState, author$project$Model$Track) ? elm$core$Platform$Cmd$batch(
-					_List_fromArray(
-						[
-							author$project$Geolocation$watch(_Utils_Tuple0)
-						])) : (_Utils_eq(newState, author$project$Model$Reset) ? elm$core$Platform$Cmd$batch(
-					_List_fromArray(
-						[
-							author$project$Geolocation$clearWatch(
-							elm$json$Json$Encode$int(model.watchId))
-						])) : elm$core$Platform$Cmd$none);
+				var newCmd = function () {
+					switch (newState.$) {
+						case 'Track':
+							return elm$core$Platform$Cmd$batch(
+								_List_fromArray(
+									[
+										author$project$Geolocation$watch(_Utils_Tuple0)
+									]));
+						case 'Pause':
+							return elm$core$Platform$Cmd$batch(
+								_List_fromArray(
+									[
+										author$project$Geolocation$clearWatch(
+										elm$json$Json$Encode$int(model.watchId))
+									]));
+						default:
+							return elm$core$Platform$Cmd$batch(
+								_List_fromArray(
+									[
+										author$project$Geolocation$clearWatch(
+										elm$json$Json$Encode$int(model.watchId)),
+										author$project$PortOl$setOlConfig(
+										author$project$Main$buildOlMapConfig(newModel))
+									]));
+					}
+				}();
 				return _Utils_Tuple2(newModel, newCmd);
 			case 'ShowPage':
 				var page = msg.a;
