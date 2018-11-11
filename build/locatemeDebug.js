@@ -5544,7 +5544,7 @@ var elm$time$Time$here = _Time_here(_Utils_Tuple0);
 var author$project$Main$iniCmd = A2(elm$core$Task$perform, author$project$Model$GetTimeZone, elm$time$Time$here);
 var author$project$Model$AboutPage = {$: 'AboutPage'};
 var author$project$Model$Pause = {$: 'Pause'};
-var author$project$Model$iniMeanPosition = {altitude: 0, east: 0, latitude: 0, longitude: 0, north: 0};
+var author$project$Model$iniMeanPosition = {altitude: 0, description: '', east: 0, latitude: 0, linkDescription: '', linkLabel: '', linkUrl: '', longitude: 0, north: 0, title: ''};
 var author$project$Model$iniMyLocation = {accuracyAltitude: elm$core$Maybe$Nothing, accuracyPos: 0, altitude: elm$core$Maybe$Nothing, distance: 0, east: 0, height: elm$core$Maybe$Nothing, latitude: 0, locationKey: '', longitude: 0, movingDegrees: elm$core$Maybe$Nothing, movingSpeed: elm$core$Maybe$Nothing, north: 0, timestamp: 1530867187430};
 var author$project$Model$iniSettings = {checkDistance: true, meanMeasures: 5, showDiagram: false};
 var author$project$Model$WindowSize = F2(
@@ -5570,11 +5570,11 @@ var author$project$Model$iniWinSize = function (flags) {
 	}
 };
 var author$project$Model$platzspitz = _Utils_Tuple2(
-	'Platzspitz',
-	{altitude: 408.36, east: 2683256.46, latitude: 47.378631, longitude: 8.541108, north: 1248117.48});
+	'Landesmuseum',
+	{altitude: 408.36, description: 'Weitere Informationen finden Sie unter ', east: 2683256.46, latitude: 47.378631, linkDescription: 'Kontrollpunkt für mobile Geräte beim Landesmuseum', linkLabel: 'are.zh.ch/kontrollpunkt.', linkUrl: 'https://are.zh.ch/kontrollpunkt', longitude: 8.541108, north: 1248117.48, title: 'Kontrollpunkt für mobile Geräte beim Landesmuseum'});
 var author$project$Model$winti = _Utils_Tuple2(
 	'Winterthur',
-	{altitude: 475.2, east: 2699109, latitude: 47.507765, longitude: 8.7542368, north: 1262721});
+	{altitude: 475.2, description: 'Weitere Tests findest du ', east: 2699109, latitude: 47.507765, linkDescription: 'Schleifstein', linkLabel: 'hier (https://szinggeler.github.io/locateme/)', linkUrl: 'https://szinggeler.github.io/locateme/', longitude: 8.7542368, north: 1262721, title: 'Test-Kontrollpunkt für mobile Geräte beim Schleifstein... ;-) '});
 var elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
 var elm$core$Dict$empty = elm$core$Dict$RBEmpty_elm_builtin;
 var elm$core$Dict$Black = {$: 'Black'};
@@ -5725,7 +5725,7 @@ var author$project$Model$iniModel = function (flags) {
 		meanPositions: _List_Nil,
 		measurements: _List_Nil,
 		myLocation: author$project$Model$iniMyLocation,
-		refLocation: author$project$Model$winti,
+		refLocation: author$project$Model$platzspitz,
 		settings: author$project$Model$iniSettings,
 		timezone: elm$time$Time$utc,
 		watchId: 0,
@@ -10236,10 +10236,15 @@ var author$project$Main$getMeanPosition = F2(
 			getAltitudeNumbers) / elm$core$List$length(getAltitudeNumbers);
 		return {
 			altitude: A2(author$project$Main$runden, mAltitude, 100),
+			description: '',
 			east: A2(author$project$Main$runden, mEast, 100),
 			latitude: A2(author$project$Main$runden, mLatitude, 10000000),
+			linkDescription: '',
+			linkLabel: '',
+			linkUrl: '',
 			longitude: A2(author$project$Main$runden, mLongitude, 10000000),
-			north: A2(author$project$Main$runden, mNorth, 100)
+			north: A2(author$project$Main$runden, mNorth, 100),
+			title: ''
 		};
 	});
 var elm$core$Basics$sqrt = _Basics_sqrt;
@@ -10455,17 +10460,32 @@ var author$project$PortOl$setOlConfig = _Platform_outgoingPort(
 												'altitude',
 												elm$json$Json$Encode$float($.altitude)),
 												_Utils_Tuple2(
+												'description',
+												elm$json$Json$Encode$string($.description)),
+												_Utils_Tuple2(
 												'east',
 												elm$json$Json$Encode$float($.east)),
 												_Utils_Tuple2(
 												'latitude',
 												elm$json$Json$Encode$float($.latitude)),
 												_Utils_Tuple2(
+												'linkDescription',
+												elm$json$Json$Encode$string($.linkDescription)),
+												_Utils_Tuple2(
+												'linkLabel',
+												elm$json$Json$Encode$string($.linkLabel)),
+												_Utils_Tuple2(
+												'linkUrl',
+												elm$json$Json$Encode$string($.linkUrl)),
+												_Utils_Tuple2(
 												'longitude',
 												elm$json$Json$Encode$float($.longitude)),
 												_Utils_Tuple2(
 												'north',
-												elm$json$Json$Encode$float($.north))
+												elm$json$Json$Encode$float($.north)),
+												_Utils_Tuple2(
+												'title',
+												elm$json$Json$Encode$string($.title))
 											]));
 								}(b)
 								]));
@@ -17376,6 +17396,8 @@ var mdgriffith$elm_ui$Element$link = F2(
 var mdgriffith$elm_ui$Element$Font$bold = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$fontWeight, mdgriffith$elm_ui$Internal$Style$classes.bold);
 var mdgriffith$elm_ui$Element$Font$underline = mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.underline);
 var author$project$View$getViewContent = function (model) {
+	var refPos = model.refLocation.b;
+	var refName = model.refLocation.a;
 	var _n0 = model.activePage;
 	switch (_n0.$) {
 		case 'AboutPage':
@@ -17392,25 +17414,25 @@ var author$project$View$getViewContent = function (model) {
 						]),
 					_List_fromArray(
 						[
-							mdgriffith$elm_ui$Element$text('Kontrollpunkt für mobile Geräte beim Landesmuseum')
+							mdgriffith$elm_ui$Element$text(refPos.title)
 						])),
 					A2(
 					mdgriffith$elm_ui$Element$paragraph,
 					_List_fromArray(
 						[
 							mdgriffith$elm_ui$Element$paddingEach(
-							{bottom: 10, left: 0, right: 0, top: 10})
+							{bottom: 20, left: 0, right: 0, top: 10})
 						]),
 					_List_fromArray(
 						[
-							mdgriffith$elm_ui$Element$text('Weitere Informationen finden Sie unter '),
+							mdgriffith$elm_ui$Element$text(refPos.description),
 							A2(
 							mdgriffith$elm_ui$Element$link,
 							_List_fromArray(
 								[mdgriffith$elm_ui$Element$pointer, mdgriffith$elm_ui$Element$Font$underline]),
 							{
-								label: mdgriffith$elm_ui$Element$text('are.zh.ch/kontrollpunkt.'),
-								url: 'https://are.zh.ch/kontrollpunkt'
+								label: mdgriffith$elm_ui$Element$text(refPos.linkLabel),
+								url: refPos.linkUrl
 							})
 						])),
 					A2(
@@ -17419,7 +17441,7 @@ var author$project$View$getViewContent = function (model) {
 						[
 							mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
 						]),
-					{description: 'Kontrollpunkt für mobile Geräte beim Landesmuseum', src: 'https://are.zh.ch/internet/baudirektion/are/de/geoinformation/Themen/kontrollpunkt/_jcr_content/contentPar/textimage_0/image.spooler.imageportrait.276.jpg/1541437715915.jpg'})
+					{description: refPos.linkDescription, src: '/img/' + (refName + '.jpg')})
 				]);
 		case 'MeasurePage':
 			return author$project$Views$Measurements$showMeasurements(model);
@@ -17988,4 +18010,4 @@ var author$project$View$view = function (model) {
 var elm$browser$Browser$element = _Browser_element;
 var author$project$Main$main = elm$browser$Browser$element(
 	{init: author$project$Main$init, subscriptions: author$project$Main$subscriptions, update: author$project$Main$update, view: author$project$View$view});
-_Platform_export({'Main':{'init':author$project$Main$main(elm$json$Json$Decode$value)({"versions":{"elm":"0.19.0"},"types":{"message":"Model.Msg","aliases":{"Model.Position":{"args":[],"type":"{ latitude : Basics.Float, longitude : Basics.Float, altitude : Basics.Float, east : Basics.Float, north : Basics.Float }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Model.Msg":{"args":[],"tags":{"GetTimeZone":["Time.Zone"],"WindowSizeUpdated":["Basics.Int","Basics.Int"],"LocationChange":["Json.Decode.Value"],"LocationError":["Json.Decode.Value"],"WatchGeolocation":["Json.Decode.Value"],"ChangeRefLocation":["( String.String, Model.Position )"],"ShowPage":["Model.Page"],"SetGeoLocState":["Model.GeoLocState"],"ToggleShowDistance":[],"ToggleShowDiagram":[]}},"Model.GeoLocState":{"args":[],"tags":{"Track":[],"Pause":[],"Reset":[]}},"Model.Page":{"args":[],"tags":{"AboutPage":[],"MeasurePage":[],"SettingsPage":[]}},"Basics.Float":{"args":[],"tags":{"Float":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"List.List":{"args":["a"],"tags":{}}}}})}});}(this));
+_Platform_export({'Main':{'init':author$project$Main$main(elm$json$Json$Decode$value)({"versions":{"elm":"0.19.0"},"types":{"message":"Model.Msg","aliases":{"Model.Position":{"args":[],"type":"{ latitude : Basics.Float, longitude : Basics.Float, altitude : Basics.Float, east : Basics.Float, north : Basics.Float, title : String.String, description : String.String, linkUrl : String.String, linkLabel : String.String, linkDescription : String.String }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Model.Msg":{"args":[],"tags":{"GetTimeZone":["Time.Zone"],"WindowSizeUpdated":["Basics.Int","Basics.Int"],"LocationChange":["Json.Decode.Value"],"LocationError":["Json.Decode.Value"],"WatchGeolocation":["Json.Decode.Value"],"ChangeRefLocation":["( String.String, Model.Position )"],"ShowPage":["Model.Page"],"SetGeoLocState":["Model.GeoLocState"],"ToggleShowDistance":[],"ToggleShowDiagram":[]}},"Model.GeoLocState":{"args":[],"tags":{"Track":[],"Pause":[],"Reset":[]}},"Model.Page":{"args":[],"tags":{"AboutPage":[],"MeasurePage":[],"SettingsPage":[]}},"Basics.Float":{"args":[],"tags":{"Float":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"List.List":{"args":["a"],"tags":{}}}}})}});}(this));
