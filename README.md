@@ -1,6 +1,10 @@
-[Start locateme](locateme.html)
+[Start locateme(v0.19)](locateme19.html)
 
-[Start locatemeLk (debug)](locatemeLk.html)
+[Start locatemeLk (debug) (v0.19)](locatemeLk19.html)
+
+[Start locateme(v0.18)](locateme18.html)
+
+[Start locatemeLk (debug) (v0.18)](locatemeLk18.html)
 
 [Start gpsposition](gpsposition.html)
 
