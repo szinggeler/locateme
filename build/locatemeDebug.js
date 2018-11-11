@@ -17441,7 +17441,7 @@ var author$project$View$getViewContent = function (model) {
 						[
 							mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
 						]),
-					{description: refPos.linkDescription, src: '/img/' + (refName + '.jpg')})
+					{description: refPos.linkDescription, src: './img/' + (refName + '.jpg')})
 				]);
 		case 'MeasurePage':
 			return author$project$Views$Measurements$showMeasurements(model);

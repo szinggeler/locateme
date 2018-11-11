@@ -13314,7 +13314,7 @@ var author$project$View$getViewContent = function (model) {
 						[
 							mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
 						]),
-					{gj: refPos.gR, hA: '/img/' + (refName + '.jpg')})
+					{gj: refPos.gR, hA: './img/' + (refName + '.jpg')})
 				]);
 		case 1:
 			return author$project$Views$Measurements$showMeasurements(model);
