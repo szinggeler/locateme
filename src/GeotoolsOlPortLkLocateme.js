@@ -7,7 +7,7 @@ function Geotools_port_init(elmApp){
             DSOlMap.setConfig(mapconfig, elmApp);
         });
     });
-
+/*
 // receive something from Elm
     elmApp.ports.setOlAction.subscribe(function (strAction) {
         console.log("got from Elm:", strAction);
@@ -19,6 +19,7 @@ function Geotools_port_init(elmApp){
             }
         }
     });
+*/
 }
 
 var DSOlMap = {
