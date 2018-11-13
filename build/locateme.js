@@ -12991,7 +12991,7 @@ var author$project$Views$Measurements$viewCoordRow = function (model) {
 			var altitude = _n0.a;
 			return A2(
 				cuducos$elm_format_number$FormatNumber$format,
-				author$project$Views$Measurements$swissNumbers(6),
+				author$project$Views$Measurements$swissNumbers(2),
 				altitude);
 		} else {
 			return '-';
