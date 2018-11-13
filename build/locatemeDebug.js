@@ -5545,7 +5545,7 @@ var author$project$Main$iniCmd = A2(elm$core$Task$perform, author$project$Model$
 var author$project$Model$AboutPage = {$: 'AboutPage'};
 var author$project$Model$Pause = {$: 'Pause'};
 var author$project$Model$iniMeanPosition = {altitude: 0, description: '', east: 0, latitude: 0, linkDescription: '', linkLabel: '', linkUrl: '', longitude: 0, north: 0, title: ''};
-var author$project$Model$iniMyLocation = {accuracyAltitude: elm$core$Maybe$Nothing, accuracyPos: 0, altitude: elm$core$Maybe$Nothing, distance: 0, east: 0, height: elm$core$Maybe$Nothing, latitude: 0, locationKey: '', longitude: 0, movingDegrees: elm$core$Maybe$Nothing, movingSpeed: elm$core$Maybe$Nothing, north: 0, timestamp: 1530867187430};
+var author$project$Model$iniMyLocation = {accuracyAltitude: elm$core$Maybe$Nothing, accuracyPos: 0, altitude: elm$core$Maybe$Nothing, distance: 0, east: 0, height: elm$core$Maybe$Nothing, latitude: 0, locationKey: '', longitude: 0, movingDegrees: elm$core$Maybe$Nothing, movingSpeed: elm$core$Maybe$Nothing, north: 0, timestamp: 0};
 var author$project$Model$iniSettings = {checkDistance: true, meanMeasures: 5, showDiagram: false};
 var author$project$Model$WindowSize = F2(
 	function (width, height) {
@@ -10346,7 +10346,6 @@ var author$project$Main$getLocationModel = F2(
 			});
 	});
 var author$project$Model$MeasurePage = {$: 'MeasurePage'};
-var author$project$Model$Reset = {$: 'Reset'};
 var author$project$Model$Track = {$: 'Track'};
 var elm$core$Maybe$destruct = F3(
 	function (_default, func, maybe) {
@@ -10587,7 +10586,7 @@ var author$project$Main$update = F2(
 							])));
 			case 'SetGeoLocState':
 				var newState = msg.a;
-				var newModel = _Utils_eq(newState, author$project$Model$Reset) ? _Utils_update(
+				var newModel = _Utils_eq(newState, author$project$Model$Track) ? _Utils_update(
 					model,
 					{geoLocState: newState, meanPosition: author$project$Model$iniMeanPosition, meanPositions: _List_Nil, measurements: _List_Nil, myLocation: author$project$Model$iniMyLocation}) : _Utils_update(
 					model,
@@ -10598,6 +10597,8 @@ var author$project$Main$update = F2(
 							return elm$core$Platform$Cmd$batch(
 								_List_fromArray(
 									[
+										author$project$PortOl$setOlConfig(
+										author$project$Main$buildOlMapConfig(newModel)),
 										author$project$Geolocation$watch(_Utils_Tuple0)
 									]));
 						case 'Pause':
@@ -16017,6 +16018,7 @@ var author$project$Views$Helpers$sectionTitle = function (title) {
 var author$project$Model$SetGeoLocState = function (a) {
 	return {$: 'SetGeoLocState', a: a};
 };
+var author$project$Views$Styles$activeColor = A3(mdgriffith$elm_ui$Element$rgb255, 118, 145, 210);
 var author$project$Views$Styles$darkGray = A3(mdgriffith$elm_ui$Element$rgb255, 125, 125, 125);
 var author$project$Views$Styles$labelStyle = _List_fromArray(
 	[
@@ -16255,9 +16257,18 @@ var author$project$Views$Styles$smallButtonStyle = _List_fromArray(
 			])),
 		mdgriffith$elm_ui$Element$pointer
 	]);
+var mdgriffith$elm_ui$Internal$Model$Max = F2(
+	function (a, b) {
+		return {$: 'Max', a: a, b: b};
+	});
+var mdgriffith$elm_ui$Element$maximum = F2(
+	function (i, l) {
+		return A2(mdgriffith$elm_ui$Internal$Model$Max, i, l);
+	});
 var author$project$Views$Styles$valueStyle = _List_fromArray(
 	[
-		mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+		mdgriffith$elm_ui$Element$width(
+		A2(mdgriffith$elm_ui$Element$maximum, 120, mdgriffith$elm_ui$Element$fill)),
 		mdgriffith$elm_ui$Element$Font$size(
 		author$project$Views$Styles$scaled(3)),
 		mdgriffith$elm_ui$Element$paddingEach(
@@ -16319,19 +16330,6 @@ var danmarcab$material_icons$Material$Icons$Internal$icon = F4(
 	});
 var elm$svg$Svg$path = elm$svg$Svg$trustedNode('path');
 var elm$svg$Svg$Attributes$d = _VirtualDom_attribute('d');
-var danmarcab$material_icons$Material$Icons$Av$pause = A2(
-	danmarcab$material_icons$Material$Icons$Internal$icon,
-	'0 0 48 48',
-	_List_fromArray(
-		[
-			A2(
-			elm$svg$Svg$path,
-			_List_fromArray(
-				[
-					elm$svg$Svg$Attributes$d('M12 38h8V10h-8v28zm16-28v28h8V10h-8z')
-				]),
-			_List_Nil)
-		]));
 var danmarcab$material_icons$Material$Icons$Av$play_arrow = A2(
 	danmarcab$material_icons$Material$Icons$Internal$icon,
 	'0 0 48 48',
@@ -16399,13 +16397,16 @@ var mdgriffith$elm_ui$Internal$Model$unstyled = A2(elm$core$Basics$composeL, mdg
 var mdgriffith$elm_ui$Element$html = mdgriffith$elm_ui$Internal$Model$unstyled;
 var mdgriffith$elm_ui$Element$Events$onClick = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Attr, elm$html$Html$Events$onClick);
 var author$project$Views$Measurements$showControls = function (model) {
+	var activeElementColor = function (geoLocState) {
+		return _Utils_eq(geoLocState, model.geoLocState) ? author$project$Views$Styles$activeColor : author$project$Views$Styles$darkGray;
+	};
 	var activeColor = function (geoLocState) {
 		return _Utils_eq(geoLocState, model.geoLocState) ? avh4$elm_color$Color$lightBlue : avh4$elm_color$Color$darkGray;
 	};
-	var buildButton = F2(
-		function (geoLocState, icon) {
+	var buildButton = F3(
+		function (geoLocState, icon, btntext) {
 			return A2(
-				mdgriffith$elm_ui$Element$el,
+				mdgriffith$elm_ui$Element$row,
 				_Utils_ap(
 					author$project$Views$Styles$smallButtonStyle,
 					_List_fromArray(
@@ -16413,18 +16414,31 @@ var author$project$Views$Measurements$showControls = function (model) {
 							mdgriffith$elm_ui$Element$Events$onClick(
 							author$project$Model$SetGeoLocState(geoLocState))
 						])),
-				mdgriffith$elm_ui$Element$html(
-					A2(
-						icon,
-						activeColor(geoLocState),
-						author$project$Views$Styles$scaled(5))));
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$html(
+						A2(
+							icon,
+							activeColor(geoLocState),
+							author$project$Views$Styles$scaled(5))),
+						A2(
+						mdgriffith$elm_ui$Element$el,
+						_List_fromArray(
+							[
+								mdgriffith$elm_ui$Element$Font$color(author$project$Views$Styles$darkGray),
+								mdgriffith$elm_ui$Element$Font$size(
+								author$project$Views$Styles$scaled(3))
+							]),
+						mdgriffith$elm_ui$Element$text(btntext))
+					]));
 		});
+	var chooseButton = _Utils_eq(model.geoLocState, author$project$Model$Track) ? A3(buildButton, author$project$Model$Pause, danmarcab$material_icons$Material$Icons$Av$stop, 'GPS stoppen') : A3(buildButton, author$project$Model$Track, danmarcab$material_icons$Material$Icons$Av$play_arrow, 'GPS starten');
 	return A2(
 		mdgriffith$elm_ui$Element$row,
 		_List_fromArray(
 			[
 				mdgriffith$elm_ui$Element$spacing(
-				author$project$Views$Styles$paddingScale(2)),
+				author$project$Views$Styles$paddingScale(4)),
 				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
 			]),
 		_List_fromArray(
@@ -16433,16 +16447,10 @@ var author$project$Views$Measurements$showControls = function (model) {
 				mdgriffith$elm_ui$Element$row,
 				_List_fromArray(
 					[
-						mdgriffith$elm_ui$Element$spacing(
-						author$project$Views$Styles$paddingScale(1)),
 						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
 					]),
 				_List_fromArray(
-					[
-						A2(buildButton, author$project$Model$Track, danmarcab$material_icons$Material$Icons$Av$play_arrow),
-						A2(buildButton, author$project$Model$Pause, danmarcab$material_icons$Material$Icons$Av$pause),
-						A2(buildButton, author$project$Model$Reset, danmarcab$material_icons$Material$Icons$Av$stop)
-					])),
+					[chooseButton])),
 				A2(
 				mdgriffith$elm_ui$Element$column,
 				_List_fromArray(
@@ -16476,7 +16484,9 @@ var author$project$Views$Helpers$fieldLabel = function (labelText) {
 				mdgriffith$elm_ui$Element$text(labelText)
 			]));
 };
-var author$project$Views$Styles$activeColor = A3(mdgriffith$elm_ui$Element$rgb255, 118, 145, 210);
+var author$project$Views$Measurements$swissNumbers = function (dec) {
+	return {decimalSeparator: '.', decimals: dec, negativePrefix: '-', negativeSuffix: '', positivePrefix: '', positiveSuffix: '', thousandSeparator: '\''};
+};
 var author$project$Views$Styles$boxStyle = function (bgcolor) {
 	return _List_fromArray(
 		[
@@ -16494,7 +16504,362 @@ var author$project$Views$Styles$boxStyle = function (bgcolor) {
 			mdgriffith$elm_ui$Element$Font$extraBold
 		]);
 };
+var cuducos$elm_format_number$Helpers$FormattedNumber = F5(
+	function (original, integers, decimals, prefix, suffix) {
+		return {decimals: decimals, integers: integers, original: original, prefix: prefix, suffix: suffix};
+	});
+var cuducos$elm_format_number$Helpers$Negative = {$: 'Negative'};
+var cuducos$elm_format_number$Helpers$Positive = {$: 'Positive'};
+var cuducos$elm_format_number$Helpers$Zero = {$: 'Zero'};
+var elm$core$List$singleton = function (value) {
+	return _List_fromArray(
+		[value]);
+};
+var cuducos$elm_format_number$Helpers$classify = function (formatted) {
+	var onlyZeros = A2(
+		elm$core$String$all,
+		function (_char) {
+			return _Utils_eq(
+				_char,
+				_Utils_chr('0'));
+		},
+		elm$core$String$concat(
+			A2(
+				elm$core$List$append,
+				formatted.integers,
+				elm$core$List$singleton(
+					A2(elm$core$Maybe$withDefault, '', formatted.decimals)))));
+	return onlyZeros ? cuducos$elm_format_number$Helpers$Zero : ((formatted.original < 0) ? cuducos$elm_format_number$Helpers$Negative : cuducos$elm_format_number$Helpers$Positive);
+};
+var elm$core$String$dropRight = F2(
+	function (n, string) {
+		return (n < 1) ? string : A3(elm$core$String$slice, 0, -n, string);
+	});
+var cuducos$elm_format_number$Helpers$splitThousands = function (integers) {
+	var reversedSplitThousands = function (value) {
+		return (elm$core$String$length(value) > 3) ? A2(
+			elm$core$List$cons,
+			A2(elm$core$String$right, 3, value),
+			reversedSplitThousands(
+				A2(elm$core$String$dropRight, 3, value))) : _List_fromArray(
+			[value]);
+	};
+	return elm$core$List$reverse(
+		reversedSplitThousands(integers));
+};
+var elm$core$List$drop = F2(
+	function (n, list) {
+		drop:
+		while (true) {
+			if (n <= 0) {
+				return list;
+			} else {
+				if (!list.b) {
+					return list;
+				} else {
+					var x = list.a;
+					var xs = list.b;
+					var $temp$n = n - 1,
+						$temp$list = xs;
+					n = $temp$n;
+					list = $temp$list;
+					continue drop;
+				}
+			}
+		}
+	});
+var elm$core$List$head = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return elm$core$Maybe$Just(x);
+	} else {
+		return elm$core$Maybe$Nothing;
+	}
+};
+var elm$core$String$filter = _String_filter;
+var elm$core$Basics$abs = function (n) {
+	return (n < 0) ? (-n) : n;
+};
+var elm$core$Basics$isInfinite = _Basics_isInfinite;
 var elm$core$Basics$isNaN = _Basics_isNaN;
+var elm$core$String$cons = _String_cons;
+var elm$core$String$fromChar = function (_char) {
+	return A2(elm$core$String$cons, _char, '');
+};
+var elm$core$Bitwise$shiftRightBy = _Bitwise_shiftRightBy;
+var elm$core$String$repeatHelp = F3(
+	function (n, chunk, result) {
+		return (n <= 0) ? result : A3(
+			elm$core$String$repeatHelp,
+			n >> 1,
+			_Utils_ap(chunk, chunk),
+			(!(n & 1)) ? result : _Utils_ap(result, chunk));
+	});
+var elm$core$String$repeat = F2(
+	function (n, chunk) {
+		return A3(elm$core$String$repeatHelp, n, chunk, '');
+	});
+var elm$core$String$padRight = F3(
+	function (n, _char, string) {
+		return _Utils_ap(
+			string,
+			A2(
+				elm$core$String$repeat,
+				n - elm$core$String$length(string),
+				elm$core$String$fromChar(_char)));
+	});
+var elm$core$String$reverse = _String_reverse;
+var elm$core$String$foldr = _String_foldr;
+var elm$core$String$toList = function (string) {
+	return A3(elm$core$String$foldr, elm$core$List$cons, _List_Nil, string);
+};
+var myrho$elm_round$Round$addSign = F2(
+	function (signed, str) {
+		var isNotZero = A2(
+			elm$core$List$any,
+			function (c) {
+				return (!_Utils_eq(
+					c,
+					_Utils_chr('0'))) && (!_Utils_eq(
+					c,
+					_Utils_chr('.')));
+			},
+			elm$core$String$toList(str));
+		return _Utils_ap(
+			(signed && isNotZero) ? '-' : '',
+			str);
+	});
+var elm$core$Char$fromCode = _Char_fromCode;
+var myrho$elm_round$Round$increaseNum = function (_n0) {
+	var head = _n0.a;
+	var tail = _n0.b;
+	if (_Utils_eq(
+		head,
+		_Utils_chr('9'))) {
+		var _n1 = elm$core$String$uncons(tail);
+		if (_n1.$ === 'Nothing') {
+			return '01';
+		} else {
+			var headtail = _n1.a;
+			return A2(
+				elm$core$String$cons,
+				_Utils_chr('0'),
+				myrho$elm_round$Round$increaseNum(headtail));
+		}
+	} else {
+		var c = elm$core$Char$toCode(head);
+		return ((c >= 48) && (c < 57)) ? A2(
+			elm$core$String$cons,
+			elm$core$Char$fromCode(c + 1),
+			tail) : '0';
+	}
+};
+var myrho$elm_round$Round$splitComma = function (str) {
+	var _n0 = A2(elm$core$String$split, '.', str);
+	if (_n0.b) {
+		if (_n0.b.b) {
+			var before = _n0.a;
+			var _n1 = _n0.b;
+			var after = _n1.a;
+			return _Utils_Tuple2(before, after);
+		} else {
+			var before = _n0.a;
+			return _Utils_Tuple2(before, '0');
+		}
+	} else {
+		return _Utils_Tuple2('0', '0');
+	}
+};
+var myrho$elm_round$Round$toDecimal = function (fl) {
+	var _n0 = A2(
+		elm$core$String$split,
+		'e',
+		elm$core$String$fromFloat(
+			elm$core$Basics$abs(fl)));
+	if (_n0.b) {
+		if (_n0.b.b) {
+			var num = _n0.a;
+			var _n1 = _n0.b;
+			var exp = _n1.a;
+			var e = A2(
+				elm$core$Maybe$withDefault,
+				0,
+				elm$core$String$toInt(
+					A2(elm$core$String$startsWith, '+', exp) ? A2(elm$core$String$dropLeft, 1, exp) : exp));
+			var _n2 = myrho$elm_round$Round$splitComma(num);
+			var before = _n2.a;
+			var after = _n2.b;
+			var total = _Utils_ap(before, after);
+			var zeroed = (e < 0) ? A2(
+				elm$core$Maybe$withDefault,
+				'0',
+				A2(
+					elm$core$Maybe$map,
+					function (_n3) {
+						var a = _n3.a;
+						var b = _n3.b;
+						return a + ('.' + b);
+					},
+					A2(
+						elm$core$Maybe$map,
+						elm$core$Tuple$mapFirst(elm$core$String$fromChar),
+						elm$core$String$uncons(
+							_Utils_ap(
+								A2(
+									elm$core$String$repeat,
+									elm$core$Basics$abs(e),
+									'0'),
+								total))))) : A3(
+				elm$core$String$padRight,
+				e + 1,
+				_Utils_chr('0'),
+				total);
+			return _Utils_ap(
+				(fl < 0) ? '-' : '',
+				zeroed);
+		} else {
+			var num = _n0.a;
+			return _Utils_ap(
+				(fl < 0) ? '-' : '',
+				num);
+		}
+	} else {
+		return '';
+	}
+};
+var myrho$elm_round$Round$roundFun = F3(
+	function (functor, s, fl) {
+		if (elm$core$Basics$isInfinite(fl) || elm$core$Basics$isNaN(fl)) {
+			return elm$core$String$fromFloat(fl);
+		} else {
+			var signed = fl < 0;
+			var _n0 = myrho$elm_round$Round$splitComma(
+				myrho$elm_round$Round$toDecimal(
+					elm$core$Basics$abs(fl)));
+			var before = _n0.a;
+			var after = _n0.b;
+			var r = elm$core$String$length(before) + s;
+			var normalized = _Utils_ap(
+				A2(elm$core$String$repeat, (-r) + 1, '0'),
+				A3(
+					elm$core$String$padRight,
+					r,
+					_Utils_chr('0'),
+					_Utils_ap(before, after)));
+			var totalLen = elm$core$String$length(normalized);
+			var roundDigitIndex = A2(elm$core$Basics$max, 1, r);
+			var increase = A2(
+				functor,
+				signed,
+				A3(elm$core$String$slice, roundDigitIndex, totalLen, normalized));
+			var remains = A3(elm$core$String$slice, 0, roundDigitIndex, normalized);
+			var num = increase ? elm$core$String$reverse(
+				A2(
+					elm$core$Maybe$withDefault,
+					'1',
+					A2(
+						elm$core$Maybe$map,
+						myrho$elm_round$Round$increaseNum,
+						elm$core$String$uncons(
+							elm$core$String$reverse(remains))))) : remains;
+			var numLen = elm$core$String$length(num);
+			var numZeroed = (num === '0') ? num : ((s <= 0) ? _Utils_ap(
+				num,
+				A2(
+					elm$core$String$repeat,
+					elm$core$Basics$abs(s),
+					'0')) : ((_Utils_cmp(
+				s,
+				elm$core$String$length(after)) < 0) ? (A3(elm$core$String$slice, 0, numLen - s, num) + ('.' + A3(elm$core$String$slice, numLen - s, numLen, num))) : _Utils_ap(
+				before + '.',
+				A3(
+					elm$core$String$padRight,
+					s,
+					_Utils_chr('0'),
+					after))));
+			return A2(myrho$elm_round$Round$addSign, signed, numZeroed);
+		}
+	});
+var myrho$elm_round$Round$round = myrho$elm_round$Round$roundFun(
+	F2(
+		function (signed, str) {
+			var _n0 = elm$core$String$uncons(str);
+			if (_n0.$ === 'Nothing') {
+				return false;
+			} else {
+				if ('5' === _n0.a.a.valueOf()) {
+					if (_n0.a.b === '') {
+						var _n1 = _n0.a;
+						return !signed;
+					} else {
+						var _n2 = _n0.a;
+						return true;
+					}
+				} else {
+					var _n3 = _n0.a;
+					var _int = _n3.a;
+					return function (i) {
+						return ((i > 53) && signed) || ((i >= 53) && (!signed));
+					}(
+						elm$core$Char$toCode(_int));
+				}
+			}
+		}));
+var cuducos$elm_format_number$Helpers$parse = F2(
+	function (locale, original) {
+		var parts = A2(
+			elm$core$String$split,
+			'.',
+			A2(myrho$elm_round$Round$round, locale.decimals, original));
+		var integers = cuducos$elm_format_number$Helpers$splitThousands(
+			A2(
+				elm$core$String$filter,
+				elm$core$Char$isDigit,
+				A2(
+					elm$core$Maybe$withDefault,
+					'0',
+					elm$core$List$head(parts))));
+		var decimals = elm$core$List$head(
+			A2(elm$core$List$drop, 1, parts));
+		var partial = A5(cuducos$elm_format_number$Helpers$FormattedNumber, original, integers, decimals, '', '');
+		var _n0 = cuducos$elm_format_number$Helpers$classify(partial);
+		switch (_n0.$) {
+			case 'Negative':
+				return _Utils_update(
+					partial,
+					{prefix: locale.negativePrefix, suffix: locale.negativeSuffix});
+			case 'Positive':
+				return _Utils_update(
+					partial,
+					{prefix: locale.positivePrefix, suffix: locale.positiveSuffix});
+			default:
+				return partial;
+		}
+	});
+var cuducos$elm_format_number$Helpers$stringfy = F2(
+	function (locale, formatted) {
+		var integers = A2(elm$core$String$join, locale.thousandSeparator, formatted.integers);
+		var decimals = function () {
+			var _n0 = formatted.decimals;
+			if (_n0.$ === 'Just') {
+				var digits = _n0.a;
+				return _Utils_ap(locale.decimalSeparator, digits);
+			} else {
+				return '';
+			}
+		}();
+		return elm$core$String$concat(
+			_List_fromArray(
+				[formatted.prefix, integers, decimals, formatted.suffix]));
+	});
+var cuducos$elm_format_number$FormatNumber$format = F2(
+	function (locale, number_) {
+		return A2(
+			cuducos$elm_format_number$Helpers$stringfy,
+			locale,
+			A2(cuducos$elm_format_number$Helpers$parse, locale, number_));
+	});
 var author$project$Views$Measurements$showDistances = function (model) {
 	var runden = F2(
 		function (zahl, factor) {
@@ -16509,7 +16874,10 @@ var author$project$Views$Measurements$showDistances = function (model) {
 		},
 		0,
 		lastXMeasurements) / elm$core$List$length(lastXMeasurements);
-	var getLastDistanceString = (elm$core$Basics$isNaN(model.myLocation.distance) || (!model.myLocation.distance)) ? 'N/A' : (elm$core$String$fromFloat(model.myLocation.distance) + ' m');
+	var getLastDistanceString = (elm$core$Basics$isNaN(model.myLocation.distance) || (!model.myLocation.distance)) ? '-' : (A2(
+		cuducos$elm_format_number$FormatNumber$format,
+		author$project$Views$Measurements$swissNumbers(2),
+		model.myLocation.distance) + ' m');
 	var getEast = A3(
 		elm$core$List$foldl,
 		function (a) {
@@ -16522,19 +16890,28 @@ var author$project$Views$Measurements$showDistances = function (model) {
 		elm$core$Basics$sqrt(
 			A2(elm$core$Basics$pow, pos.east - getEast, 2) + A2(elm$core$Basics$pow, pos.north - getNorth, 2)),
 		10);
-	var getMeanDistanceString = elm$core$Basics$isNaN(getDistance) ? 'N/A' : (elm$core$String$fromFloat(getDistance) + ' m');
+	var getMeanDistanceString = elm$core$Basics$isNaN(getDistance) ? '-' : (A2(
+		cuducos$elm_format_number$FormatNumber$format,
+		author$project$Views$Measurements$swissNumbers(2),
+		getDistance) + ' m');
 	return A2(
 		mdgriffith$elm_ui$Element$column,
 		_List_fromArray(
 			[
 				mdgriffith$elm_ui$Element$spacing(
-				author$project$Views$Styles$paddingScale(1))
+				author$project$Views$Styles$paddingScale(1)),
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
 			]),
 		_List_fromArray(
 			[
 				A2(
 				mdgriffith$elm_ui$Element$row,
-				_List_Nil,
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$spacing(
+						author$project$Views$Styles$paddingScale(1)),
+						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
+					]),
 				_List_fromArray(
 					[
 						author$project$Views$Helpers$fieldLabel(
@@ -16546,7 +16923,8 @@ var author$project$Views$Measurements$showDistances = function (model) {
 				_List_fromArray(
 					[
 						mdgriffith$elm_ui$Element$spacing(
-						author$project$Views$Styles$paddingScale(1))
+						author$project$Views$Styles$paddingScale(1)),
+						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
 					]),
 				_List_fromArray(
 					[
@@ -16560,7 +16938,13 @@ var author$project$Views$Measurements$showDistances = function (model) {
 							]),
 						A2(
 							mdgriffith$elm_ui$Element$el,
-							author$project$Views$Styles$boxStyle(author$project$Views$Styles$orange),
+							A2(
+								elm$core$List$append,
+								_List_fromArray(
+									[
+										mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
+									]),
+								author$project$Views$Styles$boxStyle(author$project$Views$Styles$orange)),
 							A2(
 								mdgriffith$elm_ui$Element$el,
 								_List_Nil,
@@ -16575,7 +16959,13 @@ var author$project$Views$Measurements$showDistances = function (model) {
 							]),
 						A2(
 							mdgriffith$elm_ui$Element$el,
-							author$project$Views$Styles$boxStyle(author$project$Views$Styles$activeColor),
+							A2(
+								elm$core$List$append,
+								_List_fromArray(
+									[
+										mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
+									]),
+								author$project$Views$Styles$boxStyle(author$project$Views$Styles$activeColor)),
 							mdgriffith$elm_ui$Element$text(getLastDistanceString)))
 					]))
 			]));
@@ -16586,7 +16976,7 @@ var author$project$Views$Measurements$showRef = function (model) {
 		mdgriffith$elm_ui$Element$row,
 		_List_fromArray(
 			[
-				mdgriffith$elm_ui$Element$spacing(25)
+				mdgriffith$elm_ui$Element$spacing(20)
 			]),
 		_List_fromArray(
 			[
@@ -16600,7 +16990,10 @@ var author$project$Views$Measurements$showRef = function (model) {
 						mdgriffith$elm_ui$Element$el,
 						author$project$Views$Styles$valueStyle,
 						mdgriffith$elm_ui$Element$text(
-							elm$core$String$fromFloat(ref.east)))
+							A2(
+								cuducos$elm_format_number$FormatNumber$format,
+								author$project$Views$Measurements$swissNumbers(2),
+								ref.east)))
 					])),
 				A2(
 				mdgriffith$elm_ui$Element$column,
@@ -16612,7 +17005,10 @@ var author$project$Views$Measurements$showRef = function (model) {
 						mdgriffith$elm_ui$Element$el,
 						author$project$Views$Styles$valueStyle,
 						mdgriffith$elm_ui$Element$text(
-							elm$core$String$fromFloat(ref.north)))
+							A2(
+								cuducos$elm_format_number$FormatNumber$format,
+								author$project$Views$Measurements$swissNumbers(2),
+								ref.north)))
 					])),
 				A2(
 				mdgriffith$elm_ui$Element$column,
@@ -16624,20 +17020,29 @@ var author$project$Views$Measurements$showRef = function (model) {
 						mdgriffith$elm_ui$Element$el,
 						author$project$Views$Styles$valueStyle,
 						mdgriffith$elm_ui$Element$text(
-							elm$core$String$fromFloat(ref.altitude)))
+							A2(
+								cuducos$elm_format_number$FormatNumber$format,
+								author$project$Views$Measurements$swissNumbers(2),
+								ref.altitude)))
 					]))
 			]));
 };
 var author$project$Views$Measurements$viewAccuracy = function (myLocation) {
 	var evalPos = function (a) {
-		return (!a) ? 'N/A' : elm$core$String$fromFloat(a);
+		return (!a) ? '-' : A2(
+			cuducos$elm_format_number$FormatNumber$format,
+			author$project$Views$Measurements$swissNumbers(2),
+			a);
 	};
 	var evalAlti = function (a) {
 		if (a.$ === 'Just') {
 			var acc = a.a;
-			return elm$core$String$fromFloat(acc);
+			return A2(
+				cuducos$elm_format_number$FormatNumber$format,
+				author$project$Views$Measurements$swissNumbers(2),
+				acc);
 		} else {
-			return 'N/A';
+			return '-';
 		}
 	};
 	return A2(
@@ -16645,7 +17050,7 @@ var author$project$Views$Measurements$viewAccuracy = function (myLocation) {
 		_List_fromArray(
 			[
 				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-				mdgriffith$elm_ui$Element$spacing(25)
+				mdgriffith$elm_ui$Element$spacing(20)
 			]),
 		_List_fromArray(
 			[
@@ -16681,27 +17086,63 @@ var author$project$Views$Measurements$viewAccuracy = function (myLocation) {
 					]))
 			]));
 };
+var elm$core$Basics$truncate = _Basics_truncate;
+var author$project$Views$Measurements$buildDegMinSec = function (decDegree) {
+	var grad = decDegree | 0;
+	var min = ((decDegree * 60) - (grad * 60)) | 0;
+	var sec = ((decDegree * 3600) - (grad * 3600)) - (min * 60);
+	return elm$core$String$fromInt(grad) + ('°' + (A2(
+		elm$core$String$right,
+		2,
+		'0' + elm$core$String$fromInt(min)) + ('\'' + (A2(
+		elm$core$String$right,
+		4,
+		'0' + A2(
+			cuducos$elm_format_number$FormatNumber$format,
+			author$project$Views$Measurements$swissNumbers(1),
+			sec)) + '\"'))));
+};
 var author$project$Views$Measurements$viewCoordRow = function (model) {
-	var n = elm$core$String$fromFloat(model.myLocation.north);
-	var lon = elm$core$String$fromFloat(model.myLocation.longitude);
-	var lat = elm$core$String$fromFloat(model.myLocation.latitude);
+	var n = (!model.myLocation.north) ? '-' : A2(
+		cuducos$elm_format_number$FormatNumber$format,
+		author$project$Views$Measurements$swissNumbers(2),
+		model.myLocation.north);
+	var lonDms = (!model.myLocation.longitude) ? '-' : author$project$Views$Measurements$buildDegMinSec(model.myLocation.longitude);
+	var lon = (!model.myLocation.longitude) ? '-' : A2(
+		cuducos$elm_format_number$FormatNumber$format,
+		author$project$Views$Measurements$swissNumbers(6),
+		model.myLocation.longitude);
+	var latDms = (!model.myLocation.latitude) ? '-' : author$project$Views$Measurements$buildDegMinSec(model.myLocation.latitude);
+	var lat = (!model.myLocation.latitude) ? '-' : A2(
+		cuducos$elm_format_number$FormatNumber$format,
+		author$project$Views$Measurements$swissNumbers(6),
+		model.myLocation.latitude);
 	var h = function () {
 		var _n1 = model.myLocation.height;
 		if (_n1.$ === 'Just') {
 			var a = _n1.a;
-			return elm$core$String$fromFloat(a);
+			return A2(
+				cuducos$elm_format_number$FormatNumber$format,
+				author$project$Views$Measurements$swissNumbers(2),
+				a);
 		} else {
-			return 'N/A';
+			return '-';
 		}
 	}();
-	var e = elm$core$String$fromFloat(model.myLocation.east);
+	var e = (!model.myLocation.east) ? '-' : A2(
+		cuducos$elm_format_number$FormatNumber$format,
+		author$project$Views$Measurements$swissNumbers(2),
+		model.myLocation.east);
 	var alti = function () {
 		var _n0 = model.myLocation.altitude;
 		if (_n0.$ === 'Just') {
 			var altitude = _n0.a;
-			return elm$core$String$fromFloat(altitude);
+			return A2(
+				cuducos$elm_format_number$FormatNumber$format,
+				author$project$Views$Measurements$swissNumbers(6),
+				altitude);
 		} else {
-			return 'N/A';
+			return '-';
 		}
 	}();
 	return A2(
@@ -16709,7 +17150,7 @@ var author$project$Views$Measurements$viewCoordRow = function (model) {
 		_List_fromArray(
 			[
 				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-				mdgriffith$elm_ui$Element$spacing(25)
+				mdgriffith$elm_ui$Element$spacing(20)
 			]),
 		_List_fromArray(
 			[
@@ -16717,45 +17158,59 @@ var author$project$Views$Measurements$viewCoordRow = function (model) {
 				mdgriffith$elm_ui$Element$column,
 				_List_fromArray(
 					[
-						A2(mdgriffith$elm_ui$Element$paddingXY, 0, 10)
+						A2(mdgriffith$elm_ui$Element$paddingXY, 0, 10),
+						mdgriffith$elm_ui$Element$width(
+						A2(mdgriffith$elm_ui$Element$maximum, 120, mdgriffith$elm_ui$Element$fill))
 					]),
 				_List_fromArray(
 					[
-						author$project$Views$Helpers$fieldLabel('Ost (LV95)'),
+						author$project$Views$Helpers$fieldLabel('Ost LV95'),
 						A2(
 						mdgriffith$elm_ui$Element$el,
 						author$project$Views$Styles$valueStyle,
 						mdgriffith$elm_ui$Element$text(e)),
-						author$project$Views$Helpers$fieldLabel('Länge (Wgs84)'),
+						author$project$Views$Helpers$fieldLabel('Länge Wgs84'),
 						A2(
 						mdgriffith$elm_ui$Element$el,
 						author$project$Views$Styles$valueStyle,
-						mdgriffith$elm_ui$Element$text(lon))
+						mdgriffith$elm_ui$Element$text(lon)),
+						A2(
+						mdgriffith$elm_ui$Element$el,
+						author$project$Views$Styles$valueStyle,
+						mdgriffith$elm_ui$Element$text(lonDms))
 					])),
 				A2(
 				mdgriffith$elm_ui$Element$column,
 				_List_fromArray(
 					[
-						A2(mdgriffith$elm_ui$Element$paddingXY, 0, 10)
+						A2(mdgriffith$elm_ui$Element$paddingXY, 0, 10),
+						mdgriffith$elm_ui$Element$width(
+						A2(mdgriffith$elm_ui$Element$maximum, 120, mdgriffith$elm_ui$Element$fill))
 					]),
 				_List_fromArray(
 					[
-						author$project$Views$Helpers$fieldLabel('Nord (LV95)'),
+						author$project$Views$Helpers$fieldLabel('Nord LV95'),
 						A2(
 						mdgriffith$elm_ui$Element$el,
 						author$project$Views$Styles$valueStyle,
 						mdgriffith$elm_ui$Element$text(n)),
-						author$project$Views$Helpers$fieldLabel('Breite (Wgs84)'),
+						author$project$Views$Helpers$fieldLabel('Breite Wgs84'),
 						A2(
 						mdgriffith$elm_ui$Element$el,
 						author$project$Views$Styles$valueStyle,
-						mdgriffith$elm_ui$Element$text(lat))
+						mdgriffith$elm_ui$Element$text(lat)),
+						A2(
+						mdgriffith$elm_ui$Element$el,
+						author$project$Views$Styles$valueStyle,
+						mdgriffith$elm_ui$Element$text(latDms))
 					])),
 				A2(
 				mdgriffith$elm_ui$Element$column,
 				_List_fromArray(
 					[
-						A2(mdgriffith$elm_ui$Element$paddingXY, 0, 10)
+						A2(mdgriffith$elm_ui$Element$paddingXY, 0, 10),
+						mdgriffith$elm_ui$Element$width(
+						A2(mdgriffith$elm_ui$Element$maximum, 120, mdgriffith$elm_ui$Element$fill))
 					]),
 				_List_fromArray(
 					[
@@ -16764,7 +17219,11 @@ var author$project$Views$Measurements$viewCoordRow = function (model) {
 						mdgriffith$elm_ui$Element$el,
 						author$project$Views$Styles$valueStyle,
 						mdgriffith$elm_ui$Element$text(h)),
-						author$project$Views$Helpers$fieldLabel('Höhe (GPS)'),
+						author$project$Views$Helpers$fieldLabel('Höhe GPS'),
+						A2(
+						mdgriffith$elm_ui$Element$el,
+						author$project$Views$Styles$valueStyle,
+						mdgriffith$elm_ui$Element$text(alti)),
 						A2(
 						mdgriffith$elm_ui$Element$el,
 						author$project$Views$Styles$valueStyle,
@@ -16802,17 +17261,17 @@ var author$project$Views$Measurements$viewMovement = function (myLocation) {
 	var evalSpeed = function (mov) {
 		if (mov.$ === 'Just') {
 			var movSpeed = mov.a;
-			return elm$core$Basics$isNaN(movSpeed) ? 'N/A' : (elm$core$String$fromFloat(movSpeed) + ' km/h');
+			return elm$core$Basics$isNaN(movSpeed) ? '-' : (elm$core$String$fromFloat(movSpeed) + ' km/h');
 		} else {
-			return 'N/A';
+			return '-';
 		}
 	};
 	var evalDirection = function (mov) {
 		if (mov.$ === 'Just') {
 			var movDirection = mov.a;
-			return elm$core$Basics$isNaN(movDirection) ? 'N/A' : (elm$core$String$fromFloat(movDirection) + '°');
+			return elm$core$Basics$isNaN(movDirection) ? '-' : (elm$core$String$fromFloat(movDirection) + '°');
 		} else {
-			return 'N/A';
+			return '-';
 		}
 	};
 	return A2(
@@ -16820,7 +17279,7 @@ var author$project$Views$Measurements$viewMovement = function (myLocation) {
 		_List_fromArray(
 			[
 				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-				mdgriffith$elm_ui$Element$spacing(25)
+				mdgriffith$elm_ui$Element$spacing(20)
 			]),
 		_List_fromArray(
 			[
@@ -17005,29 +17464,29 @@ var author$project$Views$Measurements$viewTimestamp = F2(
 		var toSwissMonth = function (month) {
 			switch (month.$) {
 				case 'Jan':
-					return 'Jan.';
+					return ' Jan.';
 				case 'Feb':
-					return 'Feb.';
+					return ' Feb.';
 				case 'Mar':
-					return 'März';
+					return ' März';
 				case 'Apr':
-					return 'Apr.';
+					return ' Apr.';
 				case 'May':
-					return 'Mai';
+					return ' Mai';
 				case 'Jun':
-					return 'Juni';
+					return ' Juni';
 				case 'Jul':
-					return 'Juli';
+					return ' Juli';
 				case 'Aug':
-					return 'Aug.';
+					return ' Aug.';
 				case 'Sep':
-					return 'Sep.';
+					return ' Sep.';
 				case 'Oct':
-					return 'Okt.';
+					return ' Okt.';
 				case 'Nov':
-					return 'Nov.';
+					return ' Nov.';
 				default:
-					return 'Dez.';
+					return ' Dez.';
 			}
 		};
 		var time = elm$time$Time$millisToPosix(timeInt);
@@ -17045,27 +17504,34 @@ var author$project$Views$Measurements$viewTimestamp = F2(
 			A2(elm$time$Time$toDay, zone, time)) + ('.' + (toSwissMonth(
 			A2(elm$time$Time$toMonth, zone, time)) + (' ' + formatNumber(
 			A2(elm$time$Time$toYear, zone, time)))));
+		var getTimeRow = (!timeInt) ? _List_fromArray(
+			[
+				A2(
+				mdgriffith$elm_ui$Element$el,
+				author$project$Views$Styles$valueStyle,
+				mdgriffith$elm_ui$Element$text('-'))
+			]) : _List_fromArray(
+			[
+				A2(
+				mdgriffith$elm_ui$Element$el,
+				author$project$Views$Styles$valueStyle,
+				mdgriffith$elm_ui$Element$text(timeString)),
+				A2(
+				mdgriffith$elm_ui$Element$el,
+				author$project$Views$Styles$valueStyle,
+				mdgriffith$elm_ui$Element$text('-')),
+				A2(
+				mdgriffith$elm_ui$Element$el,
+				author$project$Views$Styles$valueStyle,
+				mdgriffith$elm_ui$Element$text(dateString))
+			]);
 		return A2(
 			mdgriffith$elm_ui$Element$row,
 			_List_fromArray(
 				[
 					mdgriffith$elm_ui$Element$spacing(20)
 				]),
-			_List_fromArray(
-				[
-					A2(
-					mdgriffith$elm_ui$Element$el,
-					author$project$Views$Styles$valueStyle,
-					mdgriffith$elm_ui$Element$text(timeString)),
-					A2(
-					mdgriffith$elm_ui$Element$el,
-					author$project$Views$Styles$valueStyle,
-					mdgriffith$elm_ui$Element$text('-')),
-					A2(
-					mdgriffith$elm_ui$Element$el,
-					author$project$Views$Styles$valueStyle,
-					mdgriffith$elm_ui$Element$text(dateString))
-				]));
+			getTimeRow);
 	});
 var elm$html$Html$Keyed$node = elm$virtual_dom$VirtualDom$keyedNode;
 var mdgriffith$elm_ui$Internal$Model$Px = function (a) {
@@ -17079,7 +17545,7 @@ var author$project$Views$OlMap$showOlMap = function (model) {
 			[
 				mdgriffith$elm_ui$Element$height(
 				mdgriffith$elm_ui$Element$px(
-					elm$core$Basics$round(model.windowSize.height / 2))),
+					elm$core$Basics$round(model.windowSize.height / 3))),
 				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
 			]),
 		_List_fromArray(
