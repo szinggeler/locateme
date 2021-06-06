@@ -10765,6 +10765,7 @@ var $author$project$Model$iniModel = function (flags) {
 		myLocation: $author$project$Model$iniMyLocation,
 		refLocation: $author$project$Model$platzspitz,
 		settings: $author$project$Model$iniSettings,
+		shortMenu: false,
 		timezone: $elm$time$Time$utc,
 		watchId: 0,
 		windowSize: $author$project$Model$iniWinSize(flags),
@@ -11676,7 +11677,7 @@ var $author$project$Main$update = F2(
 						model,
 						{settings: newSettings}),
 					$elm$core$Platform$Cmd$none);
-			default:
+			case 'ToggleShowDiagram':
 				var oldSettings = model.settings;
 				var toggleShowDiagram = !oldSettings.showDiagram;
 				var newSettings = _Utils_update(
@@ -11686,6 +11687,13 @@ var $author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{settings: newSettings}),
+					$elm$core$Platform$Cmd$none);
+			default:
+				var menuState = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{shortMenu: menuState}),
 					$elm$core$Platform$Cmd$none);
 		}
 	});
@@ -11697,7 +11705,7 @@ var $mdgriffith$elm_ui$Element$rgb255 = F3(
 	function (red, green, blue) {
 		return A4($mdgriffith$elm_ui$Internal$Model$Rgba, red / 255, green / 255, blue / 255, 1);
 	});
-var $author$project$Views$Styles$backgroundColor = A3($mdgriffith$elm_ui$Element$rgb255, 49, 55, 57);
+var $author$project$Views$Styles$backgroundColor = A3($mdgriffith$elm_ui$Element$rgb255, 39, 45, 47);
 var $mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
 	return {$: 'AlignX', a: a};
 };
@@ -17192,6 +17200,7 @@ var $mdgriffith$elm_ui$Internal$Model$Class = F2(
 	});
 var $mdgriffith$elm_ui$Internal$Flag$fontWeight = $mdgriffith$elm_ui$Internal$Flag$flag(13);
 var $mdgriffith$elm_ui$Element$Font$bold = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$fontWeight, $mdgriffith$elm_ui$Internal$Style$classes.bold);
+var $author$project$Views$Styles$contentBgColor = A3($mdgriffith$elm_ui$Element$rgb255, 49, 55, 57);
 var $elm$html$Html$Attributes$alt = $elm$html$Html$Attributes$stringProperty('alt');
 var $elm$html$Html$Attributes$src = function (url) {
 	return A2(
@@ -17786,7 +17795,7 @@ var $mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
 			'border-radius',
 			$elm$core$String$fromInt(radius) + 'px'));
 };
-var $author$project$Views$Styles$tabbarBackgroundColor = A3($mdgriffith$elm_ui$Element$rgb255, 30, 30, 110);
+var $author$project$Views$Styles$tabbarBackgroundColor = A3($mdgriffith$elm_ui$Element$rgb255, 39, 45, 47);
 var $author$project$Views$Styles$smallButtonStyle = _List_fromArray(
 	[
 		A2(
@@ -19230,56 +19239,65 @@ var $mdgriffith$elm_ui$Element$Font$underline = $mdgriffith$elm_ui$Internal$Mode
 var $author$project$View$getViewContent = function (model) {
 	var refPos = model.refLocation.b;
 	var refName = model.refLocation.a;
-	var _v0 = model.activePage;
-	switch (_v0.$) {
-		case 'AboutPage':
-			return _List_fromArray(
-				[
-					A2(
-					$mdgriffith$elm_ui$Element$paragraph,
-					_List_fromArray(
+	return A2(
+		$mdgriffith$elm_ui$Element$column,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$Background$color($author$project$Views$Styles$contentBgColor)
+			]),
+		function () {
+			var _v0 = model.activePage;
+			switch (_v0.$) {
+				case 'AboutPage':
+					return _List_fromArray(
 						[
-							$mdgriffith$elm_ui$Element$Font$bold,
-							$mdgriffith$elm_ui$Element$Font$size(16),
-							$mdgriffith$elm_ui$Element$paddingEach(
-							{bottom: 10, left: 0, right: 0, top: 20})
-						]),
-					_List_fromArray(
-						[
-							$mdgriffith$elm_ui$Element$text(refPos.title)
-						])),
-					A2(
-					$mdgriffith$elm_ui$Element$paragraph,
-					_List_fromArray(
-						[
-							$mdgriffith$elm_ui$Element$paddingEach(
-							{bottom: 20, left: 0, right: 0, top: 10})
-						]),
-					_List_fromArray(
-						[
-							$mdgriffith$elm_ui$Element$text(refPos.description),
 							A2(
-							$mdgriffith$elm_ui$Element$link,
+							$mdgriffith$elm_ui$Element$paragraph,
 							_List_fromArray(
-								[$mdgriffith$elm_ui$Element$pointer, $mdgriffith$elm_ui$Element$Font$underline]),
-							{
-								label: $mdgriffith$elm_ui$Element$text(refPos.linkLabel),
-								url: refPos.linkUrl
-							})
-						])),
-					A2(
-					$mdgriffith$elm_ui$Element$image,
-					_List_fromArray(
-						[
-							$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
-						]),
-					{description: refPos.linkDescription, src: './img/' + (refName + '.jpg')})
-				]);
-		case 'MeasurePage':
-			return $author$project$Views$Measurements$showMeasurements(model);
-		default:
-			return $author$project$Views$Settings$showSettings(model);
-	}
+								[
+									$mdgriffith$elm_ui$Element$Font$bold,
+									$mdgriffith$elm_ui$Element$Font$size(16),
+									$mdgriffith$elm_ui$Element$paddingEach(
+									{bottom: 10, left: 0, right: 0, top: 20})
+								]),
+							_List_fromArray(
+								[
+									$mdgriffith$elm_ui$Element$text(refPos.title)
+								])),
+							A2(
+							$mdgriffith$elm_ui$Element$paragraph,
+							_List_fromArray(
+								[
+									$mdgriffith$elm_ui$Element$paddingEach(
+									{bottom: 20, left: 0, right: 0, top: 10})
+								]),
+							_List_fromArray(
+								[
+									$mdgriffith$elm_ui$Element$text(refPos.description),
+									A2(
+									$mdgriffith$elm_ui$Element$link,
+									_List_fromArray(
+										[$mdgriffith$elm_ui$Element$pointer, $mdgriffith$elm_ui$Element$Font$underline]),
+									{
+										label: $mdgriffith$elm_ui$Element$text(refPos.linkLabel),
+										url: refPos.linkUrl
+									})
+								])),
+							A2(
+							$mdgriffith$elm_ui$Element$image,
+							_List_fromArray(
+								[
+									$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
+								]),
+							{description: refPos.linkDescription, src: './img/' + (refName + '.jpg')})
+						]);
+				case 'MeasurePage':
+					return $author$project$Views$Measurements$showMeasurements(model);
+				default:
+					return $author$project$Views$Settings$showSettings(model);
+			}
+		}());
 };
 var $mdgriffith$elm_ui$Internal$Model$OnlyDynamic = F2(
 	function (a, b) {
@@ -20220,6 +20238,144 @@ var $author$project$View$logo = function (width) {
 		_List_Nil,
 		$mdgriffith$elm_ui$Element$html(iconGeoTangle));
 };
+var $author$project$Model$ToggleMenu = function (a) {
+	return {$: 'ToggleMenu', a: a};
+};
+var $mdgriffith$elm_ui$Internal$Model$Right = {$: 'Right'};
+var $mdgriffith$elm_ui$Element$alignRight = $mdgriffith$elm_ui$Internal$Model$AlignX($mdgriffith$elm_ui$Internal$Model$Right);
+var $author$project$Views$Styles$darkDarkGray = A3($mdgriffith$elm_ui$Element$rgb255, 75, 75, 75);
+var $mdgriffith$elm_ui$Internal$Model$Below = {$: 'Below'};
+var $mdgriffith$elm_ui$Element$createNearby = F2(
+	function (loc, element) {
+		if (element.$ === 'Empty') {
+			return $mdgriffith$elm_ui$Internal$Model$NoAttribute;
+		} else {
+			return A2($mdgriffith$elm_ui$Internal$Model$Nearby, loc, element);
+		}
+	});
+var $mdgriffith$elm_ui$Element$below = function (element) {
+	return A2($mdgriffith$elm_ui$Element$createNearby, $mdgriffith$elm_ui$Internal$Model$Below, element);
+};
+var $mdgriffith$elm_ui$Internal$Model$Hover = {$: 'Hover'};
+var $mdgriffith$elm_ui$Internal$Flag$hover = $mdgriffith$elm_ui$Internal$Flag$flag(33);
+var $mdgriffith$elm_ui$Element$mouseOver = function (decs) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$hover,
+		A2(
+			$mdgriffith$elm_ui$Internal$Model$PseudoSelector,
+			$mdgriffith$elm_ui$Internal$Model$Hover,
+			$mdgriffith$elm_ui$Internal$Model$unwrapDecorations(decs)));
+};
+var $author$project$View$menuItem = function (menuText) {
+	return A2(
+		$mdgriffith$elm_ui$Element$row,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$spacing(15),
+				$mdgriffith$elm_ui$Element$paddingEach(
+				{bottom: 10, left: 25, right: 25, top: 10}),
+				$mdgriffith$elm_ui$Element$pointer,
+				$mdgriffith$elm_ui$Element$mouseOver(
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$Background$color($author$project$Views$Styles$darkDarkGray)
+					])),
+				$mdgriffith$elm_ui$Element$width(
+				$mdgriffith$elm_ui$Element$px(300))
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$mdgriffith$elm_ui$Element$el,
+				_List_Nil,
+				$mdgriffith$elm_ui$Element$text('icon')),
+				A2(
+				$mdgriffith$elm_ui$Element$paragraph,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$text(menuText)
+					]))
+			]));
+};
+var $mdgriffith$elm_ui$Element$none = $mdgriffith$elm_ui$Internal$Model$Empty;
+var $author$project$View$dropdownMenu = function (shortMenu) {
+	return shortMenu ? $mdgriffith$elm_ui$Element$below(
+		A2(
+			$mdgriffith$elm_ui$Element$column,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$alignRight,
+					$mdgriffith$elm_ui$Element$Background$color($author$project$Views$Styles$backgroundColor),
+					$mdgriffith$elm_ui$Element$Border$rounded(5),
+					$mdgriffith$elm_ui$Element$paddingEach(
+					{bottom: 10, left: 0, right: 0, top: 5})
+				]),
+			_List_fromArray(
+				[
+					$author$project$View$menuItem('Settings'),
+					$author$project$View$menuItem('Referenzpunkte importieren / exportieren'),
+					$author$project$View$menuItem('About')
+				]))) : $mdgriffith$elm_ui$Element$below($mdgriffith$elm_ui$Element$none);
+};
+var $avh4$elm_color$Color$rgba = F4(
+	function (r, g, b, a) {
+		return A4($avh4$elm_color$Color$RgbaSpace, r, g, b, a);
+	});
+var $author$project$Views$Styles$grey = A4($avh4$elm_color$Color$rgba, 200, 100, 100, 0.7);
+var $danmarcab$material_icons$Material$Icons$Navigation$menu = A2(
+	$danmarcab$material_icons$Material$Icons$Internal$icon,
+	'0 0 48 48',
+	_List_fromArray(
+		[
+			A2(
+			$elm$svg$Svg$path,
+			_List_fromArray(
+				[
+					$elm$svg$Svg$Attributes$d('M6 36h36v-4H6v4zm0-10h36v-4H6v4zm0-14v4h36v-4H6z')
+				]),
+			_List_Nil)
+		]));
+var $elm$html$Html$Events$onMouseLeave = function (msg) {
+	return A2(
+		$elm$html$Html$Events$on,
+		'mouseleave',
+		$elm$json$Json$Decode$succeed(msg));
+};
+var $mdgriffith$elm_ui$Element$Events$onMouseLeave = A2($elm$core$Basics$composeL, $mdgriffith$elm_ui$Internal$Model$Attr, $elm$html$Html$Events$onMouseLeave);
+var $author$project$View$menuMore = function (model) {
+	return A2(
+		$mdgriffith$elm_ui$Element$el,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$width(
+				$mdgriffith$elm_ui$Element$px(50)),
+				$mdgriffith$elm_ui$Element$Events$onMouseLeave(
+				$author$project$Model$ToggleMenu(false))
+			]),
+		A2(
+			$mdgriffith$elm_ui$Element$el,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$alignRight,
+					$mdgriffith$elm_ui$Element$padding(10),
+					$mdgriffith$elm_ui$Element$Border$rounded(25),
+					$mdgriffith$elm_ui$Element$Font$size(
+					$author$project$Views$Styles$scaled(3)),
+					$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$lightGray),
+					$author$project$View$dropdownMenu(model.shortMenu),
+					$mdgriffith$elm_ui$Element$mouseOver(
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$Background$color($author$project$Views$Styles$darkDarkGray)
+						])),
+					$mdgriffith$elm_ui$Element$Events$onClick(
+					$author$project$Model$ToggleMenu(true))
+				]),
+			$mdgriffith$elm_ui$Element$html(
+				A2($danmarcab$material_icons$Material$Icons$Navigation$menu, $author$project$Views$Styles$grey, 32))));
+};
 var $elm$html$Html$Attributes$target = $elm$html$Html$Attributes$stringProperty('target');
 var $mdgriffith$elm_ui$Element$newTabLink = F2(
 	function (attrs, _v0) {
@@ -20270,130 +20426,120 @@ var $mdgriffith$elm_ui$Element$transparent = function (on) {
 		A2($mdgriffith$elm_ui$Internal$Model$Transparency, 'visible', 0.0));
 };
 var $author$project$Views$Styles$white = A3($mdgriffith$elm_ui$Element$rgb255, 255, 255, 255);
-var $author$project$View$headerLarge = A2(
-	$mdgriffith$elm_ui$Element$row,
-	_List_fromArray(
-		[
-			$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-			$mdgriffith$elm_ui$Element$padding(5),
-			$mdgriffith$elm_ui$Element$spacing(10)
-		]),
-	_List_fromArray(
-		[
-			A2(
-			$mdgriffith$elm_ui$Element$newTabLink,
-			_List_Nil,
-			{
-				label: A2(
-					$mdgriffith$elm_ui$Element$el,
-					_List_Nil,
-					$author$project$View$logo(50)),
-				url: '//szinggeler.github.io/'
-			}),
-			A2(
-			$mdgriffith$elm_ui$Element$newTabLink,
-			_List_Nil,
-			{
-				label: A2(
-					$mdgriffith$elm_ui$Element$el,
-					_List_fromArray(
-						[
-							$mdgriffith$elm_ui$Element$Font$size(
-							$author$project$Views$Styles$scaled(1)),
-							$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$lightGray)
-						]),
-					$mdgriffith$elm_ui$Element$text('geoTangle')),
-				url: '//szinggeler.github.io/'
-			}),
-			A2(
-			$mdgriffith$elm_ui$Element$el,
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-					$mdgriffith$elm_ui$Element$Font$center,
-					$mdgriffith$elm_ui$Element$Font$size(
-					$author$project$Views$Styles$scaled(3)),
-					$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$white)
-				]),
-			$mdgriffith$elm_ui$Element$text('LocateMe')),
-			A2(
-			$mdgriffith$elm_ui$Element$el,
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$transparent(true)
-				]),
-			$mdgriffith$elm_ui$Element$text('geoTangle')),
-			A2(
-			$mdgriffith$elm_ui$Element$el,
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$width(
-					$mdgriffith$elm_ui$Element$px(50))
-				]),
-			$mdgriffith$elm_ui$Element$text('menu'))
-		]));
-var $author$project$View$headerSmall = A2(
-	$mdgriffith$elm_ui$Element$row,
-	_List_fromArray(
-		[
-			$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-			$mdgriffith$elm_ui$Element$padding(5),
-			$mdgriffith$elm_ui$Element$spacing(10)
-		]),
-	_List_fromArray(
-		[
-			A2(
-			$mdgriffith$elm_ui$Element$newTabLink,
-			_List_Nil,
-			{
-				label: A2(
-					$mdgriffith$elm_ui$Element$el,
-					_List_Nil,
-					$author$project$View$logo(50)),
-				url: '//szinggeler.github.io/'
-			}),
-			A2(
-			$mdgriffith$elm_ui$Element$column,
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
-				]),
-			_List_fromArray(
-				[
-					A2(
-					$mdgriffith$elm_ui$Element$newTabLink,
-					_List_Nil,
-					{
-						label: A2(
-							$mdgriffith$elm_ui$Element$el,
-							_List_fromArray(
-								[
-									$mdgriffith$elm_ui$Element$Font$size(
-									$author$project$Views$Styles$scaled(1)),
-									$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$lightGray)
-								]),
-							$mdgriffith$elm_ui$Element$text('geoTangle')),
-						url: '//szinggeler.github.io/'
-					}),
-					A2(
-					$mdgriffith$elm_ui$Element$el,
-					_List_fromArray(
-						[
-							$mdgriffith$elm_ui$Element$Font$size(
-							$author$project$Views$Styles$scaled(3)),
-							$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$white)
-						]),
-					$mdgriffith$elm_ui$Element$text('LocateMe'))
-				])),
-			A2(
-			$mdgriffith$elm_ui$Element$el,
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$width(
-					$mdgriffith$elm_ui$Element$px(50))
-				]),
-			$mdgriffith$elm_ui$Element$text('menu'))
-		]));
+var $author$project$View$headerLarge = function (model) {
+	return A2(
+		$mdgriffith$elm_ui$Element$row,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+				A2($mdgriffith$elm_ui$Element$paddingXY, 0, 10),
+				$mdgriffith$elm_ui$Element$spacing(10)
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$mdgriffith$elm_ui$Element$newTabLink,
+				_List_Nil,
+				{
+					label: A2(
+						$mdgriffith$elm_ui$Element$el,
+						_List_Nil,
+						$author$project$View$logo(50)),
+					url: '//szinggeler.github.io/'
+				}),
+				A2(
+				$mdgriffith$elm_ui$Element$newTabLink,
+				_List_Nil,
+				{
+					label: A2(
+						$mdgriffith$elm_ui$Element$el,
+						_List_fromArray(
+							[
+								$mdgriffith$elm_ui$Element$Font$size(
+								$author$project$Views$Styles$scaled(1)),
+								$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$lightGray)
+							]),
+						$mdgriffith$elm_ui$Element$text('geoTangle')),
+					url: '//szinggeler.github.io/'
+				}),
+				A2(
+				$mdgriffith$elm_ui$Element$el,
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+						$mdgriffith$elm_ui$Element$Font$center,
+						$mdgriffith$elm_ui$Element$Font$size(
+						$author$project$Views$Styles$scaled(3)),
+						$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$white)
+					]),
+				$mdgriffith$elm_ui$Element$text('LocateMe')),
+				A2(
+				$mdgriffith$elm_ui$Element$el,
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$transparent(true)
+					]),
+				$mdgriffith$elm_ui$Element$text('geoTangle')),
+				$author$project$View$menuMore(model)
+			]));
+};
+var $author$project$View$headerSmall = function (model) {
+	return A2(
+		$mdgriffith$elm_ui$Element$row,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$padding(5),
+				$mdgriffith$elm_ui$Element$spacing(10)
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$mdgriffith$elm_ui$Element$newTabLink,
+				_List_Nil,
+				{
+					label: A2(
+						$mdgriffith$elm_ui$Element$el,
+						_List_Nil,
+						$author$project$View$logo(50)),
+					url: '//szinggeler.github.io/'
+				}),
+				A2(
+				$mdgriffith$elm_ui$Element$column,
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$mdgriffith$elm_ui$Element$newTabLink,
+						_List_Nil,
+						{
+							label: A2(
+								$mdgriffith$elm_ui$Element$el,
+								_List_fromArray(
+									[
+										$mdgriffith$elm_ui$Element$Font$size(
+										$author$project$Views$Styles$scaled(1)),
+										$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$lightGray)
+									]),
+								$mdgriffith$elm_ui$Element$text('geoTangle')),
+							url: '//szinggeler.github.io/'
+						}),
+						A2(
+						$mdgriffith$elm_ui$Element$el,
+						_List_fromArray(
+							[
+								$mdgriffith$elm_ui$Element$Font$size(
+								$author$project$Views$Styles$scaled(3)),
+								$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$white)
+							]),
+						$mdgriffith$elm_ui$Element$text('LocateMe'))
+					])),
+				$author$project$View$menuMore(model)
+			]));
+};
 var $danmarcab$material_icons$Material$Icons$Action$home = A2(
 	$danmarcab$material_icons$Material$Icons$Internal$icon,
 	'0 0 48 48',
@@ -20437,7 +20583,7 @@ var $mdgriffith$elm_ui$Element$Border$roundEach = function (_v0) {
 var $author$project$Views$Styles$tabStyle = function (active) {
 	var fontColor = active ? $author$project$Views$Styles$white : $author$project$Views$Styles$darkGray;
 	var borderOpts = active ? {bottom: 0, left: 1, right: 1, top: 1} : {bottom: 1, left: 0, right: 0, top: 0};
-	var bgColor = active ? $author$project$Views$Styles$backgroundColor : $author$project$Views$Styles$tabbarBackgroundColor;
+	var bgColor = active ? $author$project$Views$Styles$contentBgColor : $author$project$Views$Styles$backgroundColor;
 	return _List_fromArray(
 		[
 			A2(
@@ -20457,14 +20603,14 @@ var $author$project$Views$Styles$tabStyle = function (active) {
 			_List_fromArray(
 				[
 					$mdgriffith$elm_ui$Element$Background$color($author$project$Views$Styles$tabbarBackgroundColor),
-					$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$orange)
+					$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$white)
 				])),
 			$mdgriffith$elm_ui$Element$pointer,
 			$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
 		]);
 };
 var $author$project$View$showHeader = function (model) {
-	var topHeader = (model.windowSize.width > 400) ? $author$project$View$headerLarge : $author$project$View$headerSmall;
+	var topHeader = (model.windowSize.width > 400) ? $author$project$View$headerLarge(model) : $author$project$View$headerSmall(model);
 	var showIcon = function (icon) {
 		return $mdgriffith$elm_ui$Element$html(
 			A2(
@@ -20614,11 +20760,12 @@ var $author$project$View$view = function (model) {
 						$mdgriffith$elm_ui$Element$padding(5)
 					]),
 				$author$project$Views$Styles$unselectable),
-			A2(
-				$elm$core$List$cons,
-				$author$project$View$showHeader(model),
-				$author$project$View$getViewContent(model))));
+			_List_fromArray(
+				[
+					$author$project$View$showHeader(model),
+					$author$project$View$getViewContent(model)
+				])));
 };
 var $author$project$Main$main = $elm$browser$Browser$element(
 	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$View$view});
-_Platform_export({'Main':{'init':$author$project$Main$main($elm$json$Json$Decode$value)({"versions":{"elm":"0.19.1"},"types":{"message":"Model.Msg","aliases":{"Model.Position":{"args":[],"type":"{ latitude : Basics.Float, longitude : Basics.Float, altitude : Basics.Float, east : Basics.Float, north : Basics.Float, title : String.String, description : String.String, linkUrl : String.String, linkLabel : String.String, linkDescription : String.String }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Model.Msg":{"args":[],"tags":{"GetTimeZone":["Time.Zone"],"WindowSizeUpdated":["Basics.Int","Basics.Int"],"LocationChange":["Json.Decode.Value"],"LocationError":["Json.Decode.Value"],"WatchGeolocation":["Json.Decode.Value"],"ChangeRefLocation":["( String.String, Model.Position )"],"ShowPage":["Model.Page"],"SetGeoLocState":["Model.GeoLocState"],"ToggleShowDistance":[],"ToggleShowDiagram":[]}},"Basics.Float":{"args":[],"tags":{"Float":[]}},"Model.GeoLocState":{"args":[],"tags":{"Track":[],"Pause":[],"Reset":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Model.Page":{"args":[],"tags":{"AboutPage":[],"MeasurePage":[],"SettingsPage":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"List.List":{"args":["a"],"tags":{}}}}})}});}(this));
+_Platform_export({'Main':{'init':$author$project$Main$main($elm$json$Json$Decode$value)({"versions":{"elm":"0.19.1"},"types":{"message":"Model.Msg","aliases":{"Model.Position":{"args":[],"type":"{ latitude : Basics.Float, longitude : Basics.Float, altitude : Basics.Float, east : Basics.Float, north : Basics.Float, title : String.String, description : String.String, linkUrl : String.String, linkLabel : String.String, linkDescription : String.String }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Model.Msg":{"args":[],"tags":{"GetTimeZone":["Time.Zone"],"WindowSizeUpdated":["Basics.Int","Basics.Int"],"LocationChange":["Json.Decode.Value"],"LocationError":["Json.Decode.Value"],"WatchGeolocation":["Json.Decode.Value"],"ChangeRefLocation":["( String.String, Model.Position )"],"ShowPage":["Model.Page"],"SetGeoLocState":["Model.GeoLocState"],"ToggleShowDistance":[],"ToggleShowDiagram":[],"ToggleMenu":["Basics.Bool"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Basics.Float":{"args":[],"tags":{"Float":[]}},"Model.GeoLocState":{"args":[],"tags":{"Track":[],"Pause":[],"Reset":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Model.Page":{"args":[],"tags":{"AboutPage":[],"MeasurePage":[],"SettingsPage":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"List.List":{"args":["a"],"tags":{}}}}})}});}(this));
