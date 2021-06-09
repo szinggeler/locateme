@@ -10748,7 +10748,7 @@ var $author$project$Model$platzspitz = _Utils_Tuple2(
 var $elm$time$Time$utc = A2($elm$time$Time$Zone, 0, _List_Nil);
 var $author$project$Model$winti = _Utils_Tuple2(
 	'Winterthur',
-	{altitude: 475.2, description: 'Weitere Tests findest du ', east: 2699109, latitude: 47.507765, linkDescription: 'Schleifstein', linkLabel: 'hier (https://szinggeler.github.io/locateme/)', linkUrl: 'https://szinggeler.github.io/locateme/', longitude: 8.7542368, north: 1262721, title: 'Test-Kontrollpunkt für mobile Geräte beim Schleifstein... ;-) '});
+	{altitude: 475.2, description: 'Weitere Web-Applikationen auf der  ', east: 2699109, latitude: 47.507765, linkDescription: 'landing page', linkLabel: 'landing page', linkUrl: 'https://szinggeler.github.io/', longitude: 8.7542368, north: 1262721, title: 'Test-Kontrollpunkt für mobile Geräte beim Schleifstein... ;-)'});
 var $author$project$Model$iniModel = function (flags) {
 	return {
 		activePage: $author$project$Model$AboutPage,
@@ -11705,7 +11705,7 @@ var $mdgriffith$elm_ui$Element$rgb255 = F3(
 	function (red, green, blue) {
 		return A4($mdgriffith$elm_ui$Internal$Model$Rgba, red / 255, green / 255, blue / 255, 1);
 	});
-var $author$project$Views$Styles$backgroundColor = A3($mdgriffith$elm_ui$Element$rgb255, 39, 45, 47);
+var $author$project$Views$Styles$backgroundColor = A3($mdgriffith$elm_ui$Element$rgb255, 25, 28, 67);
 var $mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
 	return {$: 'AlignX', a: a};
 };
@@ -17795,7 +17795,7 @@ var $mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
 			'border-radius',
 			$elm$core$String$fromInt(radius) + 'px'));
 };
-var $author$project$Views$Styles$tabbarBackgroundColor = A3($mdgriffith$elm_ui$Element$rgb255, 39, 45, 47);
+var $author$project$Views$Styles$tabbarBackgroundColor = A3($mdgriffith$elm_ui$Element$rgb255, 25, 28, 67);
 var $author$project$Views$Styles$smallButtonStyle = _List_fromArray(
 	[
 		A2(
@@ -20456,7 +20456,7 @@ var $author$project$View$headerLarge = function (model) {
 						_List_fromArray(
 							[
 								$mdgriffith$elm_ui$Element$Font$size(
-								$author$project$Views$Styles$scaled(1)),
+								$author$project$Views$Styles$scaled(3)),
 								$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$lightGray)
 							]),
 						$mdgriffith$elm_ui$Element$text('geoTangle')),
@@ -20469,7 +20469,7 @@ var $author$project$View$headerLarge = function (model) {
 						$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
 						$mdgriffith$elm_ui$Element$Font$center,
 						$mdgriffith$elm_ui$Element$Font$size(
-						$author$project$Views$Styles$scaled(3)),
+						$author$project$Views$Styles$scaled(5)),
 						$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$white)
 					]),
 				$mdgriffith$elm_ui$Element$text('LocateMe')),
@@ -20521,7 +20521,7 @@ var $author$project$View$headerSmall = function (model) {
 								_List_fromArray(
 									[
 										$mdgriffith$elm_ui$Element$Font$size(
-										$author$project$Views$Styles$scaled(1)),
+										$author$project$Views$Styles$scaled(2)),
 										$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$lightGray)
 									]),
 								$mdgriffith$elm_ui$Element$text('geoTangle')),
