@@ -4986,6 +4986,283 @@ function _Time_getZoneName()
 }
 
 
+
+// DECODER
+
+var _File_decoder = _Json_decodePrim(function(value) {
+	// NOTE: checks if `File` exists in case this is run on node
+	return (typeof File !== 'undefined' && value instanceof File)
+		? $elm$core$Result$Ok(value)
+		: _Json_expecting('a FILE', value);
+});
+
+
+// METADATA
+
+function _File_name(file) { return file.name; }
+function _File_mime(file) { return file.type; }
+function _File_size(file) { return file.size; }
+
+function _File_lastModified(file)
+{
+	return $elm$time$Time$millisToPosix(file.lastModified);
+}
+
+
+// DOWNLOAD
+
+var _File_downloadNode;
+
+function _File_getDownloadNode()
+{
+	return _File_downloadNode || (_File_downloadNode = document.createElement('a'));
+}
+
+var _File_download = F3(function(name, mime, content)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		var blob = new Blob([content], {type: mime});
+
+		// for IE10+
+		if (navigator.msSaveOrOpenBlob)
+		{
+			navigator.msSaveOrOpenBlob(blob, name);
+			return;
+		}
+
+		// for HTML5
+		var node = _File_getDownloadNode();
+		var objectUrl = URL.createObjectURL(blob);
+		node.href = objectUrl;
+		node.download = name;
+		_File_click(node);
+		URL.revokeObjectURL(objectUrl);
+	});
+});
+
+function _File_downloadUrl(href)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		var node = _File_getDownloadNode();
+		node.href = href;
+		node.download = '';
+		node.origin === location.origin || (node.target = '_blank');
+		_File_click(node);
+	});
+}
+
+
+// IE COMPATIBILITY
+
+function _File_makeBytesSafeForInternetExplorer(bytes)
+{
+	// only needed by IE10 and IE11 to fix https://github.com/elm/file/issues/10
+	// all other browsers can just run `new Blob([bytes])` directly with no problem
+	//
+	return new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+}
+
+function _File_click(node)
+{
+	// only needed by IE10 and IE11 to fix https://github.com/elm/file/issues/11
+	// all other browsers have MouseEvent and do not need this conditional stuff
+	//
+	if (typeof MouseEvent === 'function')
+	{
+		node.dispatchEvent(new MouseEvent('click'));
+	}
+	else
+	{
+		var event = document.createEvent('MouseEvents');
+		event.initMouseEvent('click', true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+		document.body.appendChild(node);
+		node.dispatchEvent(event);
+		document.body.removeChild(node);
+	}
+}
+
+
+// UPLOAD
+
+var _File_node;
+
+function _File_uploadOne(mimes)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		_File_node = document.createElement('input');
+		_File_node.type = 'file';
+		_File_node.accept = A2($elm$core$String$join, ',', mimes);
+		_File_node.addEventListener('change', function(event)
+		{
+			callback(_Scheduler_succeed(event.target.files[0]));
+		});
+		_File_click(_File_node);
+	});
+}
+
+function _File_uploadOneOrMore(mimes)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		_File_node = document.createElement('input');
+		_File_node.type = 'file';
+		_File_node.multiple = true;
+		_File_node.accept = A2($elm$core$String$join, ',', mimes);
+		_File_node.addEventListener('change', function(event)
+		{
+			var elmFiles = _List_fromArray(event.target.files);
+			callback(_Scheduler_succeed(_Utils_Tuple2(elmFiles.a, elmFiles.b)));
+		});
+		_File_click(_File_node);
+	});
+}
+
+
+// CONTENT
+
+function _File_toString(blob)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		var reader = new FileReader();
+		reader.addEventListener('loadend', function() {
+			callback(_Scheduler_succeed(reader.result));
+		});
+		reader.readAsText(blob);
+		return function() { reader.abort(); };
+	});
+}
+
+function _File_toBytes(blob)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		var reader = new FileReader();
+		reader.addEventListener('loadend', function() {
+			callback(_Scheduler_succeed(new DataView(reader.result)));
+		});
+		reader.readAsArrayBuffer(blob);
+		return function() { reader.abort(); };
+	});
+}
+
+function _File_toUrl(blob)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		var reader = new FileReader();
+		reader.addEventListener('loadend', function() {
+			callback(_Scheduler_succeed(reader.result));
+		});
+		reader.readAsDataURL(blob);
+		return function() { reader.abort(); };
+	});
+}
+
+
+
+
+
+// VIRTUAL-DOM WIDGETS
+
+
+var _Markdown_toHtml = F3(function(options, factList, rawMarkdown)
+{
+	return _VirtualDom_custom(
+		factList,
+		{
+			a: options,
+			b: rawMarkdown
+		},
+		_Markdown_render,
+		_Markdown_diff
+	);
+});
+
+
+
+// WIDGET IMPLEMENTATION
+
+
+function _Markdown_render(model)
+{
+	return A2(_Markdown_replace, model, _VirtualDom_doc.createElement('div'));
+}
+
+
+function _Markdown_diff(x, y)
+{
+	return x.b === y.b && x.a === y.a
+		? false
+		: _Markdown_replace(y);
+}
+
+
+var _Markdown_replace = F2(function(model, div)
+{
+	div.innerHTML = _Markdown_marked(model.b, _Markdown_formatOptions(model.a));
+	return div;
+});
+
+
+
+// ACTUAL MARKDOWN PARSER
+
+
+var _Markdown_marked = function() {
+	// catch the `marked` object regardless of the outer environment.
+	// (ex. a CommonJS module compatible environment.)
+	// note that this depends on marked's implementation of environment detection.
+	var module = {};
+	var exports = module.exports = {};
+
+	/**
+	 * marked - a markdown parser
+	 * Copyright (c) 2011-2014, Christopher Jeffrey. (MIT Licensed)
+	 * https://github.com/chjj/marked
+	 * commit cd2f6f5b7091154c5526e79b5f3bfb4d15995a51
+	 */
+	(function(){var block={newline:/^\n+/,code:/^( {4}[^\n]+\n*)+/,fences:noop,hr:/^( *[-*_]){3,} *(?:\n+|$)/,heading:/^ *(#{1,6}) *([^\n]+?) *#* *(?:\n+|$)/,nptable:noop,lheading:/^([^\n]+)\n *(=|-){2,} *(?:\n+|$)/,blockquote:/^( *>[^\n]+(\n(?!def)[^\n]+)*\n*)+/,list:/^( *)(bull) [\s\S]+?(?:hr|def|\n{2,}(?! )(?!\1bull )\n*|\s*$)/,html:/^ *(?:comment *(?:\n|\s*$)|closed *(?:\n{2,}|\s*$)|closing *(?:\n{2,}|\s*$))/,def:/^ *\[([^\]]+)\]: *<?([^\s>]+)>?(?: +["(]([^\n]+)[")])? *(?:\n+|$)/,table:noop,paragraph:/^((?:[^\n]+\n?(?!hr|heading|lheading|blockquote|tag|def))+)\n*/,text:/^[^\n]+/};block.bullet=/(?:[*+-]|\d+\.)/;block.item=/^( *)(bull) [^\n]*(?:\n(?!\1bull )[^\n]*)*/;block.item=replace(block.item,"gm")(/bull/g,block.bullet)();block.list=replace(block.list)(/bull/g,block.bullet)("hr","\\n+(?=\\1?(?:[-*_] *){3,}(?:\\n+|$))")("def","\\n+(?="+block.def.source+")")();block.blockquote=replace(block.blockquote)("def",block.def)();block._tag="(?!(?:"+"a|em|strong|small|s|cite|q|dfn|abbr|data|time|code"+"|var|samp|kbd|sub|sup|i|b|u|mark|ruby|rt|rp|bdi|bdo"+"|span|br|wbr|ins|del|img)\\b)\\w+(?!:/|[^\\w\\s@]*@)\\b";block.html=replace(block.html)("comment",/<!--[\s\S]*?-->/)("closed",/<(tag)[\s\S]+?<\/\1>/)("closing",/<tag(?:"[^"]*"|'[^']*'|[^'">])*?>/)(/tag/g,block._tag)();block.paragraph=replace(block.paragraph)("hr",block.hr)("heading",block.heading)("lheading",block.lheading)("blockquote",block.blockquote)("tag","<"+block._tag)("def",block.def)();block.normal=merge({},block);block.gfm=merge({},block.normal,{fences:/^ *(`{3,}|~{3,})[ \.]*(\S+)? *\n([\s\S]*?)\s*\1 *(?:\n+|$)/,paragraph:/^/,heading:/^ *(#{1,6}) +([^\n]+?) *#* *(?:\n+|$)/});block.gfm.paragraph=replace(block.paragraph)("(?!","(?!"+block.gfm.fences.source.replace("\\1","\\2")+"|"+block.list.source.replace("\\1","\\3")+"|")();block.tables=merge({},block.gfm,{nptable:/^ *(\S.*\|.*)\n *([-:]+ *\|[-| :]*)\n((?:.*\|.*(?:\n|$))*)\n*/,table:/^ *\|(.+)\n *\|( *[-:]+[-| :]*)\n((?: *\|.*(?:\n|$))*)\n*/});function Lexer(options){this.tokens=[];this.tokens.links={};this.options=options||marked.defaults;this.rules=block.normal;if(this.options.gfm){if(this.options.tables){this.rules=block.tables}else{this.rules=block.gfm}}}Lexer.rules=block;Lexer.lex=function(src,options){var lexer=new Lexer(options);return lexer.lex(src)};Lexer.prototype.lex=function(src){src=src.replace(/\r\n|\r/g,"\n").replace(/\t/g,"    ").replace(/\u00a0/g," ").replace(/\u2424/g,"\n");return this.token(src,true)};Lexer.prototype.token=function(src,top,bq){var src=src.replace(/^ +$/gm,""),next,loose,cap,bull,b,item,space,i,l;while(src){if(cap=this.rules.newline.exec(src)){src=src.substring(cap[0].length);if(cap[0].length>1){this.tokens.push({type:"space"})}}if(cap=this.rules.code.exec(src)){src=src.substring(cap[0].length);cap=cap[0].replace(/^ {4}/gm,"");this.tokens.push({type:"code",text:!this.options.pedantic?cap.replace(/\n+$/,""):cap});continue}if(cap=this.rules.fences.exec(src)){src=src.substring(cap[0].length);this.tokens.push({type:"code",lang:cap[2],text:cap[3]||""});continue}if(cap=this.rules.heading.exec(src)){src=src.substring(cap[0].length);this.tokens.push({type:"heading",depth:cap[1].length,text:cap[2]});continue}if(top&&(cap=this.rules.nptable.exec(src))){src=src.substring(cap[0].length);item={type:"table",header:cap[1].replace(/^ *| *\| *$/g,"").split(/ *\| */),align:cap[2].replace(/^ *|\| *$/g,"").split(/ *\| */),cells:cap[3].replace(/\n$/,"").split("\n")};for(i=0;i<item.align.length;i++){if(/^ *-+: *$/.test(item.align[i])){item.align[i]="right"}else if(/^ *:-+: *$/.test(item.align[i])){item.align[i]="center"}else if(/^ *:-+ *$/.test(item.align[i])){item.align[i]="left"}else{item.align[i]=null}}for(i=0;i<item.cells.length;i++){item.cells[i]=item.cells[i].split(/ *\| */)}this.tokens.push(item);continue}if(cap=this.rules.lheading.exec(src)){src=src.substring(cap[0].length);this.tokens.push({type:"heading",depth:cap[2]==="="?1:2,text:cap[1]});continue}if(cap=this.rules.hr.exec(src)){src=src.substring(cap[0].length);this.tokens.push({type:"hr"});continue}if(cap=this.rules.blockquote.exec(src)){src=src.substring(cap[0].length);this.tokens.push({type:"blockquote_start"});cap=cap[0].replace(/^ *> ?/gm,"");this.token(cap,top,true);this.tokens.push({type:"blockquote_end"});continue}if(cap=this.rules.list.exec(src)){src=src.substring(cap[0].length);bull=cap[2];this.tokens.push({type:"list_start",ordered:bull.length>1});cap=cap[0].match(this.rules.item);next=false;l=cap.length;i=0;for(;i<l;i++){item=cap[i];space=item.length;item=item.replace(/^ *([*+-]|\d+\.) +/,"");if(~item.indexOf("\n ")){space-=item.length;item=!this.options.pedantic?item.replace(new RegExp("^ {1,"+space+"}","gm"),""):item.replace(/^ {1,4}/gm,"")}if(this.options.smartLists&&i!==l-1){b=block.bullet.exec(cap[i+1])[0];if(bull!==b&&!(bull.length>1&&b.length>1)){src=cap.slice(i+1).join("\n")+src;i=l-1}}loose=next||/\n\n(?!\s*$)/.test(item);if(i!==l-1){next=item.charAt(item.length-1)==="\n";if(!loose)loose=next}this.tokens.push({type:loose?"loose_item_start":"list_item_start"});this.token(item,false,bq);this.tokens.push({type:"list_item_end"})}this.tokens.push({type:"list_end"});continue}if(cap=this.rules.html.exec(src)){src=src.substring(cap[0].length);this.tokens.push({type:this.options.sanitize?"paragraph":"html",pre:!this.options.sanitizer&&(cap[1]==="pre"||cap[1]==="script"||cap[1]==="style"),text:cap[0]});continue}if(!bq&&top&&(cap=this.rules.def.exec(src))){src=src.substring(cap[0].length);this.tokens.links[cap[1].toLowerCase()]={href:cap[2],title:cap[3]};continue}if(top&&(cap=this.rules.table.exec(src))){src=src.substring(cap[0].length);item={type:"table",header:cap[1].replace(/^ *| *\| *$/g,"").split(/ *\| */),align:cap[2].replace(/^ *|\| *$/g,"").split(/ *\| */),cells:cap[3].replace(/(?: *\| *)?\n$/,"").split("\n")};for(i=0;i<item.align.length;i++){if(/^ *-+: *$/.test(item.align[i])){item.align[i]="right"}else if(/^ *:-+: *$/.test(item.align[i])){item.align[i]="center"}else if(/^ *:-+ *$/.test(item.align[i])){item.align[i]="left"}else{item.align[i]=null}}for(i=0;i<item.cells.length;i++){item.cells[i]=item.cells[i].replace(/^ *\| *| *\| *$/g,"").split(/ *\| */)}this.tokens.push(item);continue}if(top&&(cap=this.rules.paragraph.exec(src))){src=src.substring(cap[0].length);this.tokens.push({type:"paragraph",text:cap[1].charAt(cap[1].length-1)==="\n"?cap[1].slice(0,-1):cap[1]});continue}if(cap=this.rules.text.exec(src)){src=src.substring(cap[0].length);this.tokens.push({type:"text",text:cap[0]});continue}if(src){throw new Error("Infinite loop on byte: "+src.charCodeAt(0))}}return this.tokens};var inline={escape:/^\\([\\`*{}\[\]()#+\-.!_>])/,autolink:/^<([^ >]+(@|:\/)[^ >]+)>/,url:noop,tag:/^<!--[\s\S]*?-->|^<\/?\w+(?:"[^"]*"|'[^']*'|[^'">])*?>/,link:/^!?\[(inside)\]\(href\)/,reflink:/^!?\[(inside)\]\s*\[([^\]]*)\]/,nolink:/^!?\[((?:\[[^\]]*\]|[^\[\]])*)\]/,strong:/^_\_([\s\S]+?)_\_(?!_)|^\*\*([\s\S]+?)\*\*(?!\*)/,em:/^\b_((?:[^_]|_\_)+?)_\b|^\*((?:\*\*|[\s\S])+?)\*(?!\*)/,code:/^(`+)\s*([\s\S]*?[^`])\s*\1(?!`)/,br:/^ {2,}\n(?!\s*$)/,del:noop,text:/^[\s\S]+?(?=[\\<!\[_*`]| {2,}\n|$)/};inline._inside=/(?:\[[^\]]*\]|[^\[\]]|\](?=[^\[]*\]))*/;inline._href=/\s*<?([\s\S]*?)>?(?:\s+['"]([\s\S]*?)['"])?\s*/;inline.link=replace(inline.link)("inside",inline._inside)("href",inline._href)();inline.reflink=replace(inline.reflink)("inside",inline._inside)();inline.normal=merge({},inline);inline.pedantic=merge({},inline.normal,{strong:/^_\_(?=\S)([\s\S]*?\S)_\_(?!_)|^\*\*(?=\S)([\s\S]*?\S)\*\*(?!\*)/,em:/^_(?=\S)([\s\S]*?\S)_(?!_)|^\*(?=\S)([\s\S]*?\S)\*(?!\*)/});inline.gfm=merge({},inline.normal,{escape:replace(inline.escape)("])","~|])")(),url:/^(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/,del:/^~~(?=\S)([\s\S]*?\S)~~/,text:replace(inline.text)("]|","~]|")("|","|https?://|")()});inline.breaks=merge({},inline.gfm,{br:replace(inline.br)("{2,}","*")(),text:replace(inline.gfm.text)("{2,}","*")()});function InlineLexer(links,options){this.options=options||marked.defaults;this.links=links;this.rules=inline.normal;this.renderer=this.options.renderer||new Renderer;this.renderer.options=this.options;if(!this.links){throw new Error("Tokens array requires a `links` property.")}if(this.options.gfm){if(this.options.breaks){this.rules=inline.breaks}else{this.rules=inline.gfm}}else if(this.options.pedantic){this.rules=inline.pedantic}}InlineLexer.rules=inline;InlineLexer.output=function(src,links,options){var inline=new InlineLexer(links,options);return inline.output(src)};InlineLexer.prototype.output=function(src){var out="",link,text,href,cap;while(src){if(cap=this.rules.escape.exec(src)){src=src.substring(cap[0].length);out+=cap[1];continue}if(cap=this.rules.autolink.exec(src)){src=src.substring(cap[0].length);if(cap[2]==="@"){text=cap[1].charAt(6)===":"?this.mangle(cap[1].substring(7)):this.mangle(cap[1]);href=this.mangle("mailto:")+text}else{text=escape(cap[1]);href=text}out+=this.renderer.link(href,null,text);continue}if(!this.inLink&&(cap=this.rules.url.exec(src))){src=src.substring(cap[0].length);text=escape(cap[1]);href=text;out+=this.renderer.link(href,null,text);continue}if(cap=this.rules.tag.exec(src)){if(!this.inLink&&/^<a /i.test(cap[0])){this.inLink=true}else if(this.inLink&&/^<\/a>/i.test(cap[0])){this.inLink=false}src=src.substring(cap[0].length);out+=this.options.sanitize?this.options.sanitizer?this.options.sanitizer(cap[0]):escape(cap[0]):cap[0];continue}if(cap=this.rules.link.exec(src)){src=src.substring(cap[0].length);this.inLink=true;out+=this.outputLink(cap,{href:cap[2],title:cap[3]});this.inLink=false;continue}if((cap=this.rules.reflink.exec(src))||(cap=this.rules.nolink.exec(src))){src=src.substring(cap[0].length);link=(cap[2]||cap[1]).replace(/\s+/g," ");link=this.links[link.toLowerCase()];if(!link||!link.href){out+=cap[0].charAt(0);src=cap[0].substring(1)+src;continue}this.inLink=true;out+=this.outputLink(cap,link);this.inLink=false;continue}if(cap=this.rules.strong.exec(src)){src=src.substring(cap[0].length);out+=this.renderer.strong(this.output(cap[2]||cap[1]));continue}if(cap=this.rules.em.exec(src)){src=src.substring(cap[0].length);out+=this.renderer.em(this.output(cap[2]||cap[1]));continue}if(cap=this.rules.code.exec(src)){src=src.substring(cap[0].length);out+=this.renderer.codespan(escape(cap[2],true));continue}if(cap=this.rules.br.exec(src)){src=src.substring(cap[0].length);out+=this.renderer.br();continue}if(cap=this.rules.del.exec(src)){src=src.substring(cap[0].length);out+=this.renderer.del(this.output(cap[1]));continue}if(cap=this.rules.text.exec(src)){src=src.substring(cap[0].length);out+=this.renderer.text(escape(this.smartypants(cap[0])));continue}if(src){throw new Error("Infinite loop on byte: "+src.charCodeAt(0))}}return out};InlineLexer.prototype.outputLink=function(cap,link){var href=escape(link.href),title=link.title?escape(link.title):null;return cap[0].charAt(0)!=="!"?this.renderer.link(href,title,this.output(cap[1])):this.renderer.image(href,title,escape(cap[1]))};InlineLexer.prototype.smartypants=function(text){if(!this.options.smartypants)return text;return text.replace(/---/g,"—").replace(/--/g,"–").replace(/(^|[-\u2014\/(\[{"\s])'/g,"$1‘").replace(/'/g,"’").replace(/(^|[-\u2014\/(\[{\u2018\s])"/g,"$1“").replace(/"/g,"”").replace(/\.{3}/g,"…")};InlineLexer.prototype.mangle=function(text){if(!this.options.mangle)return text;var out="",l=text.length,i=0,ch;for(;i<l;i++){ch=text.charCodeAt(i);if(Math.random()>.5){ch="x"+ch.toString(16)}out+="&#"+ch+";"}return out};function Renderer(options){this.options=options||{}}Renderer.prototype.code=function(code,lang,escaped){if(this.options.highlight){var out=this.options.highlight(code,lang);if(out!=null&&out!==code){escaped=true;code=out}}if(!lang){return"<pre><code>"+(escaped?code:escape(code,true))+"\n</code></pre>"}return'<pre><code class="'+this.options.langPrefix+escape(lang,true)+'">'+(escaped?code:escape(code,true))+"\n</code></pre>\n"};Renderer.prototype.blockquote=function(quote){return"<blockquote>\n"+quote+"</blockquote>\n"};Renderer.prototype.html=function(html){return html};Renderer.prototype.heading=function(text,level,raw){return"<h"+level+' id="'+this.options.headerPrefix+raw.toLowerCase().replace(/[^\w]+/g,"-")+'">'+text+"</h"+level+">\n"};Renderer.prototype.hr=function(){return this.options.xhtml?"<hr/>\n":"<hr>\n"};Renderer.prototype.list=function(body,ordered){var type=ordered?"ol":"ul";return"<"+type+">\n"+body+"</"+type+">\n"};Renderer.prototype.listitem=function(text){return"<li>"+text+"</li>\n"};Renderer.prototype.paragraph=function(text){return"<p>"+text+"</p>\n"};Renderer.prototype.table=function(header,body){return"<table>\n"+"<thead>\n"+header+"</thead>\n"+"<tbody>\n"+body+"</tbody>\n"+"</table>\n"};Renderer.prototype.tablerow=function(content){return"<tr>\n"+content+"</tr>\n"};Renderer.prototype.tablecell=function(content,flags){var type=flags.header?"th":"td";var tag=flags.align?"<"+type+' style="text-align:'+flags.align+'">':"<"+type+">";return tag+content+"</"+type+">\n"};Renderer.prototype.strong=function(text){return"<strong>"+text+"</strong>"};Renderer.prototype.em=function(text){return"<em>"+text+"</em>"};Renderer.prototype.codespan=function(text){return"<code>"+text+"</code>"};Renderer.prototype.br=function(){return this.options.xhtml?"<br/>":"<br>"};Renderer.prototype.del=function(text){return"<del>"+text+"</del>"};Renderer.prototype.link=function(href,title,text){if(this.options.sanitize){try{var prot=decodeURIComponent(unescape(href)).replace(/[^\w:]/g,"").toLowerCase()}catch(e){return""}if(prot.indexOf("javascript:")===0||prot.indexOf("vbscript:")===0||prot.indexOf("data:")===0){return""}}var out='<a href="'+href+'"';if(title){out+=' title="'+title+'"'}out+=">"+text+"</a>";return out};Renderer.prototype.image=function(href,title,text){var out='<img src="'+href+'" alt="'+text+'"';if(title){out+=' title="'+title+'"'}out+=this.options.xhtml?"/>":">";return out};Renderer.prototype.text=function(text){return text};function Parser(options){this.tokens=[];this.token=null;this.options=options||marked.defaults;this.options.renderer=this.options.renderer||new Renderer;this.renderer=this.options.renderer;this.renderer.options=this.options}Parser.parse=function(src,options,renderer){var parser=new Parser(options,renderer);return parser.parse(src)};Parser.prototype.parse=function(src){this.inline=new InlineLexer(src.links,this.options,this.renderer);this.tokens=src.reverse();var out="";while(this.next()){out+=this.tok()}return out};Parser.prototype.next=function(){return this.token=this.tokens.pop()};Parser.prototype.peek=function(){return this.tokens[this.tokens.length-1]||0};Parser.prototype.parseText=function(){var body=this.token.text;while(this.peek().type==="text"){body+="\n"+this.next().text}return this.inline.output(body)};Parser.prototype.tok=function(){switch(this.token.type){case"space":{return""}case"hr":{return this.renderer.hr()}case"heading":{return this.renderer.heading(this.inline.output(this.token.text),this.token.depth,this.token.text)}case"code":{return this.renderer.code(this.token.text,this.token.lang,this.token.escaped)}case"table":{var header="",body="",i,row,cell,flags,j;cell="";for(i=0;i<this.token.header.length;i++){flags={header:true,align:this.token.align[i]};cell+=this.renderer.tablecell(this.inline.output(this.token.header[i]),{header:true,align:this.token.align[i]})}header+=this.renderer.tablerow(cell);for(i=0;i<this.token.cells.length;i++){row=this.token.cells[i];cell="";for(j=0;j<row.length;j++){cell+=this.renderer.tablecell(this.inline.output(row[j]),{header:false,align:this.token.align[j]})}body+=this.renderer.tablerow(cell)}return this.renderer.table(header,body)}case"blockquote_start":{var body="";while(this.next().type!=="blockquote_end"){body+=this.tok()}return this.renderer.blockquote(body)}case"list_start":{var body="",ordered=this.token.ordered;while(this.next().type!=="list_end"){body+=this.tok()}return this.renderer.list(body,ordered)}case"list_item_start":{var body="";while(this.next().type!=="list_item_end"){body+=this.token.type==="text"?this.parseText():this.tok()}return this.renderer.listitem(body)}case"loose_item_start":{var body="";while(this.next().type!=="list_item_end"){body+=this.tok()}return this.renderer.listitem(body)}case"html":{var html=!this.token.pre&&!this.options.pedantic?this.inline.output(this.token.text):this.token.text;return this.renderer.html(html)}case"paragraph":{return this.renderer.paragraph(this.inline.output(this.token.text))}case"text":{return this.renderer.paragraph(this.parseText())}}};function escape(html,encode){return html.replace(!encode?/&(?!#?\w+;)/g:/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function unescape(html){return html.replace(/&(#(?:\d+)|(?:#x[0-9A-Fa-f]+)|(?:\w+));?/g,function(_,n){n=n.toLowerCase();if(n==="colon")return":";if(n.charAt(0)==="#"){return n.charAt(1)==="x"?String.fromCharCode(parseInt(n.substring(2),16)):String.fromCharCode(+n.substring(1))}return""})}function replace(regex,opt){regex=regex.source;opt=opt||"";return function self(name,val){if(!name)return new RegExp(regex,opt);val=val.source||val;val=val.replace(/(^|[^\[])\^/g,"$1");regex=regex.replace(name,val);return self}}function noop(){}noop.exec=noop;function merge(obj){var i=1,target,key;for(;i<arguments.length;i++){target=arguments[i];for(key in target){if(Object.prototype.hasOwnProperty.call(target,key)){obj[key]=target[key]}}}return obj}function marked(src,opt,callback){if(callback||typeof opt==="function"){if(!callback){callback=opt;opt=null}opt=merge({},marked.defaults,opt||{});var highlight=opt.highlight,tokens,pending,i=0;try{tokens=Lexer.lex(src,opt)}catch(e){return callback(e)}pending=tokens.length;var done=function(err){if(err){opt.highlight=highlight;return callback(err)}var out;try{out=Parser.parse(tokens,opt)}catch(e){err=e}opt.highlight=highlight;return err?callback(err):callback(null,out)};if(!highlight||highlight.length<3){return done()}delete opt.highlight;if(!pending)return done();for(;i<tokens.length;i++){(function(token){if(token.type!=="code"){return--pending||done()}return highlight(token.text,token.lang,function(err,code){if(err)return done(err);if(code==null||code===token.text){return--pending||done()}token.text=code;token.escaped=true;--pending||done()})})(tokens[i])}return}try{if(opt)opt=merge({},marked.defaults,opt);return Parser.parse(Lexer.lex(src,opt),opt)}catch(e){e.message+="\nPlease report this to https://github.com/chjj/marked.";if((opt||marked.defaults).silent){return"<p>An error occured:</p><pre>"+escape(e.message+"",true)+"</pre>"}throw e}}marked.options=marked.setOptions=function(opt){merge(marked.defaults,opt);return marked};marked.defaults={gfm:true,tables:true,breaks:false,pedantic:false,sanitize:false,sanitizer:null,mangle:true,smartLists:false,silent:false,highlight:null,langPrefix:"lang-",smartypants:false,headerPrefix:"",renderer:new Renderer,xhtml:false};marked.Parser=Parser;marked.parser=Parser.parse;marked.Renderer=Renderer;marked.Lexer=Lexer;marked.lexer=Lexer.lex;marked.InlineLexer=InlineLexer;marked.inlineLexer=InlineLexer.output;marked.parse=marked;if(typeof module!=="undefined"&&typeof exports==="object"){module.exports=marked}else if(typeof define==="function"&&define.amd){define(function(){return marked})}else{this.marked=marked}}).call(function(){return this||(typeof window!=="undefined"?window:global)}());
+
+	return module.exports;
+}();
+
+
+// FORMAT OPTIONS FOR MARKED IMPLEMENTATION
+
+function _Markdown_formatOptions(options)
+{
+	function toHighlight(code, lang)
+	{
+		if (!lang && $elm$core$Maybe$isJust(options.defaultHighlighting))
+		{
+			lang = options.defaultHighlighting.a;
+		}
+
+		if (typeof hljs !== 'undefined' && lang && hljs.listLanguages().indexOf(lang) >= 0)
+		{
+			return hljs.highlight(lang, code, true).value;
+		}
+
+		return code;
+	}
+
+	var gfm = options.githubFlavored.a;
+
+	return {
+		highlight: toHighlight,
+		gfm: gfm,
+		tables: gfm && gfm.tables,
+		breaks: gfm && gfm.breaks,
+		sanitize: options.sanitize,
+		smartypants: options.smartypants
+	};
+}
+
+
 // CREATE
 
 var _Regex_never = /.^/;
@@ -10721,9 +10998,9 @@ var $mdgriffith$elm_ui$Element$classifyDevice = function (window) {
 		orientation: (_Utils_cmp(window.width, window.height) < 0) ? $mdgriffith$elm_ui$Element$Portrait : $mdgriffith$elm_ui$Element$Landscape
 	};
 };
-var $author$project$Model$iniMeanPosition = {altitude: 0, description: '', east: 0, latitude: 0, linkDescription: '', linkLabel: '', linkUrl: '', longitude: 0, north: 0, title: ''};
+var $author$project$Model$iniMeanPosition = {altitude: 0, east: 0, fix: false, imgUrl: './img/Landesmuseum.jpg', latitude: 0, longitude: 0, mdDescription: '', north: 0, refId: '', title: ''};
 var $author$project$Model$iniMyLocation = {accuracyAltitude: $elm$core$Maybe$Nothing, accuracyPos: 0, altitude: $elm$core$Maybe$Nothing, distance: 0, east: 0, height: $elm$core$Maybe$Nothing, latitude: 0, locationKey: '', longitude: 0, movingDegrees: $elm$core$Maybe$Nothing, movingSpeed: $elm$core$Maybe$Nothing, north: 0, timestamp: 0};
-var $author$project$Model$iniSettings = {checkDistance: true, meanMeasures: 5, showDiagram: false};
+var $author$project$Model$iniSettings = {addingReference: false, checkDistance: true, meanMeasures: 5, showDiagram: false};
 var $author$project$Model$WindowSize = F2(
 	function (width, height) {
 		return {height: height, width: width};
@@ -10743,12 +11020,9 @@ var $author$project$Model$iniWinSize = function (flags) {
 	}
 };
 var $author$project$Model$platzspitz = _Utils_Tuple2(
-	'Landesmuseum',
-	{altitude: 408.36, description: 'Weitere Informationen finden Sie unter ', east: 2683256.46, latitude: 47.378631, linkDescription: 'Kontrollpunkt für mobile Geräte beim Landesmuseum', linkLabel: 'Kontrollpunkt Landesmuseum', linkUrl: 'https://www.zh.ch/de/planen-bauen/geoinformation/geodaten/koordinatensystem.html#273464403', longitude: 8.541108, north: 1248117.48, title: 'Kontrollpunkt für mobile Geräte beim Landesmuseum'});
+	'1Landesmuseum',
+	{altitude: 408.36, east: 2683256.46, fix: true, imgUrl: './img/Landesmuseum.jpg', latitude: 47.378631, longitude: 8.541108, mdDescription: 'Weitere Informationen finden Sie unter [Kontrollpunkt Landesmuseum](https://www.zh.ch/de/planen-bauen/geoinformation/geodaten/koordinatensystem.html#273464403 "Infos zu Kontrollpunkt")', north: 1248117.48, refId: '1Landesmuseum', title: 'Kontrollpunkt für mobile Geräte beim Landesmuseum'});
 var $elm$time$Time$utc = A2($elm$time$Time$Zone, 0, _List_Nil);
-var $author$project$Model$winti = _Utils_Tuple2(
-	'Winterthur',
-	{altitude: 475.2, description: 'Weitere Web-Applikationen auf der  ', east: 2699109, latitude: 47.507765, linkDescription: 'landing page', linkLabel: 'landing page', linkUrl: 'https://szinggeler.github.io/', longitude: 8.7542368, north: 1262721, title: 'Test-Kontrollpunkt für mobile Geräte beim Schleifstein... ;-)'});
 var $author$project$Model$iniModel = function (flags) {
 	return {
 		activePage: $author$project$Model$AboutPage,
@@ -10758,12 +11032,18 @@ var $author$project$Model$iniModel = function (flags) {
 		geoLocState: $author$project$Model$Pause,
 		locations: $elm$core$Dict$fromList(
 			_List_fromArray(
-				[$author$project$Model$winti, $author$project$Model$platzspitz])),
+				[$author$project$Model$platzspitz])),
 		meanPosition: $author$project$Model$iniMeanPosition,
 		meanPositions: _List_Nil,
 		measurements: _List_Nil,
 		myLocation: $author$project$Model$iniMyLocation,
+		refEast: 2699109,
+		refId: '',
+		refImgSrc: '//www.suedkurier.de/storage/image/9/2/0/9/13079029_shift-966x593_1wmQuk_Z6S0G6.jpg',
 		refLocation: $author$project$Model$platzspitz,
+		refMdDescription: 'Dies ist ein **neuer** Ref-Punkt [landing page](https://szinggeler.github.io/ "landing page")',
+		refNorth: 1262721,
+		refTitle: 'Neuer Refpkt',
 		settings: $author$project$Model$iniSettings,
 		shortMenu: false,
 		timezone: $elm$time$Time$utc,
@@ -10991,6 +11271,12 @@ var $author$project$Main$subscriptions = function (model) {
 		]);
 	return $elm$core$Platform$Sub$batch(subWindow);
 };
+var $author$project$Model$ImportLoaded = function (a) {
+	return {$: 'ImportLoaded', a: a};
+};
+var $author$project$Model$ImportSelected = function (a) {
+	return {$: 'ImportSelected', a: a};
+};
 var $author$project$Model$MeasurePage = {$: 'MeasurePage'};
 var $author$project$Model$Track = {$: 'Track'};
 var $author$project$Main$buildOlMapConfig = function (model) {
@@ -11057,6 +11343,56 @@ var $author$project$Geolocation$decodeWatchId = function (jsid) {
 		return 0;
 	}
 };
+var $elm$json$Json$Encode$bool = _Json_wrap;
+var $elm$json$Json$Encode$float = _Json_wrap;
+var $author$project$Data$encodedPosition = function (position) {
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'refId',
+				$elm$json$Json$Encode$string(position.refId)),
+				_Utils_Tuple2(
+				'latitude',
+				$elm$json$Json$Encode$float(position.latitude)),
+				_Utils_Tuple2(
+				'longitude',
+				$elm$json$Json$Encode$float(position.longitude)),
+				_Utils_Tuple2(
+				'altitude',
+				$elm$json$Json$Encode$float(position.altitude)),
+				_Utils_Tuple2(
+				'east',
+				$elm$json$Json$Encode$float(position.east)),
+				_Utils_Tuple2(
+				'north',
+				$elm$json$Json$Encode$float(position.north)),
+				_Utils_Tuple2(
+				'title',
+				$elm$json$Json$Encode$string(position.title)),
+				_Utils_Tuple2(
+				'mdDescription',
+				$elm$json$Json$Encode$string(position.mdDescription)),
+				_Utils_Tuple2(
+				'imgUrl',
+				$elm$json$Json$Encode$string(position.imgUrl)),
+				_Utils_Tuple2(
+				'fix',
+				$elm$json$Json$Encode$bool(position.fix))
+			]));
+};
+var $author$project$Data$encodedReferences = $elm$json$Json$Encode$list($author$project$Data$encodedPosition);
+var $elm$time$Time$Posix = function (a) {
+	return {$: 'Posix', a: a};
+};
+var $elm$time$Time$millisToPosix = $elm$time$Time$Posix;
+var $elm$file$File$Select$file = F2(
+	function (mimes, toMsg) {
+		return A2(
+			$elm$core$Task$perform,
+			toMsg,
+			_File_uploadOne(mimes));
+	});
 var $elm$core$List$filter = F2(
 	function (isGood, list) {
 		return A3(
@@ -11266,14 +11602,14 @@ var $author$project$Main$getMeanPosition = F2(
 			getAltitudeNumbers) / $elm$core$List$length(getAltitudeNumbers);
 		return {
 			altitude: A2($author$project$Main$runden, mAltitude, 100),
-			description: '',
 			east: A2($author$project$Main$runden, mEast, 100),
+			fix: false,
+			imgUrl: '',
 			latitude: A2($author$project$Main$runden, mLatitude, 10000000),
-			linkDescription: '',
-			linkLabel: '',
-			linkUrl: '',
 			longitude: A2($author$project$Main$runden, mLongitude, 10000000),
+			mdDescription: '',
 			north: A2($author$project$Main$runden, mNorth, 100),
+			refId: '',
 			title: ''
 		};
 	});
@@ -11376,7 +11712,48 @@ var $author$project$Main$getLocationModel = F2(
 			});
 	});
 var $elm$json$Json$Encode$int = _Json_wrap;
-var $elm$json$Json$Encode$bool = _Json_wrap;
+var $author$project$Model$Position = function (refId) {
+	return function (latitude) {
+		return function (longitude) {
+			return function (altitude) {
+				return function (east) {
+					return function (north) {
+						return function (title) {
+							return function (mdDescription) {
+								return function (imgUrl) {
+									return function (fix) {
+										return {altitude: altitude, east: east, fix: fix, imgUrl: imgUrl, latitude: latitude, longitude: longitude, mdDescription: mdDescription, north: north, refId: refId, title: title};
+									};
+								};
+							};
+						};
+					};
+				};
+			};
+		};
+	};
+};
+var $elm$json$Json$Decode$bool = _Json_decodeBool;
+var $author$project$Data$positionDecoder = function () {
+	var fieldSet0 = A9(
+		$elm$json$Json$Decode$map8,
+		$author$project$Model$Position,
+		A2($elm$json$Json$Decode$field, 'refId', $elm$json$Json$Decode$string),
+		A2($elm$json$Json$Decode$field, 'latitude', $elm$json$Json$Decode$float),
+		A2($elm$json$Json$Decode$field, 'longitude', $elm$json$Json$Decode$float),
+		A2($elm$json$Json$Decode$field, 'altitude', $elm$json$Json$Decode$float),
+		A2($elm$json$Json$Decode$field, 'east', $elm$json$Json$Decode$float),
+		A2($elm$json$Json$Decode$field, 'north', $elm$json$Json$Decode$float),
+		A2($elm$json$Json$Decode$field, 'title', $elm$json$Json$Decode$string),
+		A2($elm$json$Json$Decode$field, 'mdDescription', $elm$json$Json$Decode$string));
+	return A4(
+		$elm$json$Json$Decode$map3,
+		$elm$core$Basics$apL,
+		fieldSet0,
+		A2($elm$json$Json$Decode$field, 'imgUrl', $elm$json$Json$Decode$string),
+		A2($elm$json$Json$Decode$field, 'fix', $elm$json$Json$Decode$bool));
+}();
+var $author$project$Data$refPositionDecoder = $elm$json$Json$Decode$list($author$project$Data$positionDecoder);
 var $elm$core$Maybe$destruct = F3(
 	function (_default, func, maybe) {
 		if (maybe.$ === 'Just') {
@@ -11386,7 +11763,6 @@ var $elm$core$Maybe$destruct = F3(
 			return _default;
 		}
 	});
-var $elm$json$Json$Encode$float = _Json_wrap;
 var $elm$json$Json$Encode$null = _Json_encodeNull;
 var $author$project$PortOl$setOlConfig = _Platform_outgoingPort(
 	'setOlConfig',
@@ -11488,29 +11864,29 @@ var $author$project$PortOl$setOlConfig = _Platform_outgoingPort(
 												'altitude',
 												$elm$json$Json$Encode$float($.altitude)),
 												_Utils_Tuple2(
-												'description',
-												$elm$json$Json$Encode$string($.description)),
-												_Utils_Tuple2(
 												'east',
 												$elm$json$Json$Encode$float($.east)),
+												_Utils_Tuple2(
+												'fix',
+												$elm$json$Json$Encode$bool($.fix)),
+												_Utils_Tuple2(
+												'imgUrl',
+												$elm$json$Json$Encode$string($.imgUrl)),
 												_Utils_Tuple2(
 												'latitude',
 												$elm$json$Json$Encode$float($.latitude)),
 												_Utils_Tuple2(
-												'linkDescription',
-												$elm$json$Json$Encode$string($.linkDescription)),
-												_Utils_Tuple2(
-												'linkLabel',
-												$elm$json$Json$Encode$string($.linkLabel)),
-												_Utils_Tuple2(
-												'linkUrl',
-												$elm$json$Json$Encode$string($.linkUrl)),
-												_Utils_Tuple2(
 												'longitude',
 												$elm$json$Json$Encode$float($.longitude)),
 												_Utils_Tuple2(
+												'mdDescription',
+												$elm$json$Json$Encode$string($.mdDescription)),
+												_Utils_Tuple2(
 												'north',
 												$elm$json$Json$Encode$float($.north)),
+												_Utils_Tuple2(
+												'refId',
+												$elm$json$Json$Encode$string($.refId)),
 												_Utils_Tuple2(
 												'title',
 												$elm$json$Json$Encode$string($.title))
@@ -11523,6 +11899,20 @@ var $author$project$PortOl$setOlConfig = _Platform_outgoingPort(
 					$elm$json$Json$Encode$float($.zoom))
 				]));
 	});
+var $elm$file$File$Download$string = F3(
+	function (name, mime, content) {
+		return A2(
+			$elm$core$Task$perform,
+			$elm$core$Basics$never,
+			A3(_File_download, name, mime, content));
+	});
+var $elm$core$String$toFloat = _String_toFloat;
+var $elm$file$File$toString = _File_toString;
+var $author$project$Main$toggleAddReference = function (settings) {
+	return _Utils_update(
+		settings,
+		{addingReference: !settings.addingReference});
+};
 var $author$project$Geolocation$watch = _Platform_outgoingPort(
 	'watch',
 	function ($) {
@@ -11688,13 +12078,179 @@ var $author$project$Main$update = F2(
 						model,
 						{settings: newSettings}),
 					$elm$core$Platform$Cmd$none);
-			default:
+			case 'ToggleMenu':
 				var menuState = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{shortMenu: menuState}),
 					$elm$core$Platform$Cmd$none);
+			case 'ToggleAddReference':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							refEast: 0,
+							refId: '',
+							refImgSrc: '',
+							refMdDescription: '',
+							refNorth: 0,
+							refTitle: '',
+							settings: $author$project$Main$toggleAddReference(model.settings)
+						}),
+					$elm$core$Platform$Cmd$none);
+			case 'RefEastChanged':
+				var east = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							refEast: A2(
+								$elm$core$Maybe$withDefault,
+								2700000.0,
+								$elm$core$String$toFloat(east))
+						}),
+					$elm$core$Platform$Cmd$none);
+			case 'RefNorthChanged':
+				var north = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							refNorth: A2(
+								$elm$core$Maybe$withDefault,
+								1277777.0,
+								$elm$core$String$toFloat(north))
+						}),
+					$elm$core$Platform$Cmd$none);
+			case 'RefTitleChanged':
+				var title = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{refTitle: title}),
+					$elm$core$Platform$Cmd$none);
+			case 'RefImgSrcChanged':
+				var imgSrc = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{refImgSrc: imgSrc}),
+					$elm$core$Platform$Cmd$none);
+			case 'RefDescriptionChanged':
+				var mdDescription = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{refMdDescription: mdDescription}),
+					$elm$core$Platform$Cmd$none);
+			case 'RefLocationSave':
+				var activeRefId = (model.refId === '') ? model.refTitle : model.refId;
+				var newPosition = {altitude: 500, east: model.refEast, fix: false, imgUrl: model.refImgSrc, latitude: 47.5, longitude: 8.5, mdDescription: model.refMdDescription, north: model.refNorth, refId: activeRefId, title: model.refTitle};
+				var newLocations = ((model.refId === 'Landesmuseum') || (model.refId === 'Winterthur')) ? model.locations : A3($elm$core$Dict$insert, activeRefId, newPosition, model.locations);
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							locations: newLocations,
+							refEast: 0,
+							refId: '',
+							refImgSrc: '',
+							refLocation: _Utils_Tuple2(activeRefId, newPosition),
+							refMdDescription: '',
+							refNorth: 0,
+							refTitle: '',
+							settings: $author$project$Main$toggleAddReference(model.settings)
+						}),
+					$elm$core$Platform$Cmd$none);
+			case 'RefLocationDelete':
+				var refId = msg.a;
+				var refLocations = A2($elm$core$Dict$remove, refId, model.locations);
+				var refActive = _Utils_eq(refId, model.refLocation.a) ? $author$project$Model$platzspitz : model.refLocation;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{locations: refLocations, refLocation: refActive}),
+					$elm$core$Platform$Cmd$none);
+			case 'RefLocationEdit':
+				var refId = msg.a;
+				var newPosition = {altitude: 500, east: model.refEast, fix: false, imgUrl: model.refImgSrc, latitude: 47.5, longitude: 8.5, mdDescription: model.refMdDescription, north: model.refNorth, refId: refId, title: model.refTitle};
+				var refSelected = A2(
+					$elm$core$Maybe$withDefault,
+					newPosition,
+					A2($elm$core$Dict$get, refId, model.locations));
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							refEast: refSelected.east,
+							refId: refSelected.refId,
+							refImgSrc: refSelected.imgUrl,
+							refMdDescription: refSelected.mdDescription,
+							refNorth: refSelected.north,
+							refTitle: refSelected.title,
+							settings: $author$project$Main$toggleAddReference(model.settings)
+						}),
+					$elm$core$Platform$Cmd$none);
+			case 'ExportReferences':
+				var refsString = A2(
+					$elm$json$Json$Encode$encode,
+					4,
+					$author$project$Data$encodedReferences(
+						$elm$core$Dict$values(model.locations)));
+				return _Utils_Tuple2(
+					model,
+					A3($elm$file$File$Download$string, 'locateme_references.json', 'application/json', refsString));
+			case 'ImportRequested':
+				return _Utils_Tuple2(
+					model,
+					A2(
+						$elm$file$File$Select$file,
+						_List_fromArray(
+							['application/json']),
+						$author$project$Model$ImportSelected));
+			case 'ImportSelected':
+				var file = msg.a;
+				return _Utils_Tuple2(
+					model,
+					A2(
+						$elm$core$Task$perform,
+						$author$project$Model$ImportLoaded,
+						$elm$file$File$toString(file)));
+			default:
+				var content = msg.a;
+				var newCmd = $elm$core$Platform$Cmd$none;
+				var decodeStoredRefPositions = A2($elm$json$Json$Decode$decodeString, $author$project$Data$refPositionDecoder, content);
+				var getStoredPositions = function () {
+					if (decodeStoredRefPositions.$ === 'Err') {
+						return $elm$core$Dict$values(model.locations);
+					} else {
+						var refPositions = decodeStoredRefPositions.a;
+						return refPositions;
+					}
+				}();
+				var newLocations = function () {
+					var kvPairs = A2(
+						$elm$core$List$map,
+						function (p) {
+							return _Utils_Tuple2(p.refId, p);
+						},
+						getStoredPositions);
+					return $elm$core$Dict$fromList(kvPairs);
+				}();
+				var newStatus = function () {
+					if (decodeStoredRefPositions.$ === 'Ok') {
+						return 'Referenzpunkte erfolgreich importiert';
+					} else {
+						var error = decodeStoredRefPositions.a;
+						return 'Fehler: Datei konnte nicht importiert werden (' + ($elm$json$Json$Decode$errorToString(error) + ')');
+					}
+				}();
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{locations: newLocations}),
+					newCmd);
 		}
 	});
 var $mdgriffith$elm_ui$Internal$Model$Rgba = F4(
@@ -17200,7 +17756,21 @@ var $mdgriffith$elm_ui$Internal$Model$Class = F2(
 	});
 var $mdgriffith$elm_ui$Internal$Flag$fontWeight = $mdgriffith$elm_ui$Internal$Flag$flag(13);
 var $mdgriffith$elm_ui$Element$Font$bold = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$fontWeight, $mdgriffith$elm_ui$Internal$Style$classes.bold);
+var $mdgriffith$elm_ui$Internal$Flag$borderColor = $mdgriffith$elm_ui$Internal$Flag$flag(28);
+var $mdgriffith$elm_ui$Element$Border$color = function (clr) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$borderColor,
+		A3(
+			$mdgriffith$elm_ui$Internal$Model$Colored,
+			'bc-' + $mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
+			'border-color',
+			clr));
+};
 var $author$project$Views$Styles$contentBgColor = A3($mdgriffith$elm_ui$Element$rgb255, 49, 55, 57);
+var $author$project$Views$Styles$darkGray = A3($mdgriffith$elm_ui$Element$rgb255, 125, 125, 125);
+var $mdgriffith$elm_ui$Internal$Model$unstyled = A2($elm$core$Basics$composeL, $mdgriffith$elm_ui$Internal$Model$Unstyled, $elm$core$Basics$always);
+var $mdgriffith$elm_ui$Element$html = $mdgriffith$elm_ui$Internal$Model$unstyled;
 var $elm$html$Html$Attributes$alt = $elm$html$Html$Attributes$stringProperty('alt');
 var $elm$html$Html$Attributes$src = function (url) {
 	return A2(
@@ -17252,37 +17822,18 @@ var $mdgriffith$elm_ui$Element$image = F2(
 						$mdgriffith$elm_ui$Internal$Model$Unkeyed(_List_Nil))
 					])));
 	});
-var $elm$html$Html$Attributes$rel = _VirtualDom_attribute('rel');
-var $mdgriffith$elm_ui$Element$link = F2(
-	function (attrs, _v0) {
-		var url = _v0.url;
-		var label = _v0.label;
-		return A4(
-			$mdgriffith$elm_ui$Internal$Model$element,
-			$mdgriffith$elm_ui$Internal$Model$asEl,
-			$mdgriffith$elm_ui$Internal$Model$NodeName('a'),
-			A2(
-				$elm$core$List$cons,
-				$mdgriffith$elm_ui$Internal$Model$Attr(
-					$elm$html$Html$Attributes$href(url)),
-				A2(
-					$elm$core$List$cons,
-					$mdgriffith$elm_ui$Internal$Model$Attr(
-						$elm$html$Html$Attributes$rel('noopener noreferrer')),
-					A2(
-						$elm$core$List$cons,
-						$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$shrink),
-						A2(
-							$elm$core$List$cons,
-							$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$shrink),
-							A2(
-								$elm$core$List$cons,
-								$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.contentCenterX + (' ' + ($mdgriffith$elm_ui$Internal$Style$classes.contentCenterY + (' ' + $mdgriffith$elm_ui$Internal$Style$classes.link)))),
-								attrs))))),
-			$mdgriffith$elm_ui$Internal$Model$Unkeyed(
-				_List_fromArray(
-					[label])));
-	});
+var $author$project$Views$Helpers$imgUrlFromWms = function (_v0) {
+	var east = _v0.a;
+	var north = _v0.b;
+	var bbox = _List_fromArray(
+		[
+			$elm$core$String$fromFloat(east - 200),
+			$elm$core$String$fromFloat(north - 200),
+			$elm$core$String$fromFloat(east + 200),
+			$elm$core$String$fromFloat(north + 200)
+		]);
+	return 'https://wms.zh.ch/uplayerwms/?SERVICE=WMS&VERSION=1.3.0' + ('&REQUEST=GetMap&FORMAT=image/png; mode=8bit' + ('&TRANSPARENT=false' + ('&LAYERS=uplayerwms' + ('&CRS=EPSG:2056' + ('&STYLES=' + ('&MAP_RESOLUTION=180' + ('&WIDTH=700' + ('&HEIGHT=700' + ('&BBOX=' + A2($elm$core$String$join, ',', bbox))))))))));
+};
 var $mdgriffith$elm_ui$Internal$Model$PaddingStyle = F5(
 	function (a, b, c, d, e) {
 		return {$: 'PaddingStyle', a: a, b: b, c: c, d: d, e: e};
@@ -17363,8 +17914,6 @@ var $mdgriffith$elm_ui$Element$paragraph = F2(
 						attrs))),
 			$mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
 	});
-var $mdgriffith$elm_ui$Internal$Flag$cursor = $mdgriffith$elm_ui$Internal$Flag$flag(21);
-var $mdgriffith$elm_ui$Element$pointer = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$cursor, $mdgriffith$elm_ui$Internal$Style$classes.cursorPointer);
 var $mdgriffith$elm_ui$Internal$Model$AsRow = {$: 'AsRow'};
 var $mdgriffith$elm_ui$Internal$Model$asRow = $mdgriffith$elm_ui$Internal$Model$AsRow;
 var $mdgriffith$elm_ui$Element$row = F2(
@@ -17468,7 +18017,7 @@ var $author$project$Views$Styles$sectionRowStyle = _List_fromArray(
 		$mdgriffith$elm_ui$Element$paddingEach(
 		{
 			bottom: $author$project$Views$Styles$paddingScale(1),
-			left: 0,
+			left: 10,
 			right: 0,
 			top: $author$project$Views$Styles$paddingScale(5)
 		}),
@@ -17506,7 +18055,6 @@ var $avh4$elm_color$Color$RgbaSpace = F4(
 		return {$: 'RgbaSpace', a: a, b: b, c: c, d: d};
 	});
 var $avh4$elm_color$Color$darkGray = A4($avh4$elm_color$Color$RgbaSpace, 186 / 255, 189 / 255, 182 / 255, 1.0);
-var $author$project$Views$Styles$darkGray = A3($mdgriffith$elm_ui$Element$rgb255, 125, 125, 125);
 var $mdgriffith$elm_ui$Element$el = F2(
 	function (attrs, child) {
 		return A4(
@@ -17524,8 +18072,6 @@ var $mdgriffith$elm_ui$Element$el = F2(
 				_List_fromArray(
 					[child])));
 	});
-var $mdgriffith$elm_ui$Internal$Model$unstyled = A2($elm$core$Basics$composeL, $mdgriffith$elm_ui$Internal$Model$Unstyled, $elm$core$Basics$always);
-var $mdgriffith$elm_ui$Element$html = $mdgriffith$elm_ui$Internal$Model$unstyled;
 var $author$project$Views$Styles$labelStyle = _List_fromArray(
 	[
 		$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
@@ -17601,18 +18147,6 @@ var $danmarcab$material_icons$Material$Icons$Av$play_arrow = A2(
 			_List_Nil)
 		]));
 var $author$project$Views$Styles$black = A3($mdgriffith$elm_ui$Element$rgb255, 0, 0, 0);
-var $mdgriffith$elm_ui$Internal$Flag$borderColor = $mdgriffith$elm_ui$Internal$Flag$flag(28);
-var $mdgriffith$elm_ui$Element$Border$color = function (clr) {
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$borderColor,
-		A3(
-			$mdgriffith$elm_ui$Internal$Model$Colored,
-			'bc-' + $mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
-			'border-color',
-			clr));
-};
-var $mdgriffith$elm_ui$Element$Font$extraBold = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$fontWeight, $mdgriffith$elm_ui$Internal$Style$classes.textExtraBold);
 var $mdgriffith$elm_ui$Internal$Model$Active = {$: 'Active'};
 var $mdgriffith$elm_ui$Internal$Model$PseudoSelector = F2(
 	function (a, b) {
@@ -17754,36 +18288,21 @@ var $mdgriffith$elm_ui$Element$mouseDown = function (decs) {
 			$mdgriffith$elm_ui$Internal$Model$Active,
 			$mdgriffith$elm_ui$Internal$Model$unwrapDecorations(decs)));
 };
-var $author$project$Views$Styles$orange = A3($mdgriffith$elm_ui$Element$rgb255, 255, 50, 0);
-var $mdgriffith$elm_ui$Element$paddingXY = F2(
-	function (x, y) {
-		if (_Utils_eq(x, y)) {
-			var f = x;
-			return A2(
-				$mdgriffith$elm_ui$Internal$Model$StyleClass,
-				$mdgriffith$elm_ui$Internal$Flag$padding,
-				A5(
-					$mdgriffith$elm_ui$Internal$Model$PaddingStyle,
-					'p-' + $elm$core$String$fromInt(x),
-					f,
-					f,
-					f,
-					f));
-		} else {
-			var yFloat = y;
-			var xFloat = x;
-			return A2(
-				$mdgriffith$elm_ui$Internal$Model$StyleClass,
-				$mdgriffith$elm_ui$Internal$Flag$padding,
-				A5(
-					$mdgriffith$elm_ui$Internal$Model$PaddingStyle,
-					'p-' + ($elm$core$String$fromInt(x) + ('-' + $elm$core$String$fromInt(y))),
-					yFloat,
-					xFloat,
-					yFloat,
-					xFloat));
-		}
-	});
+var $mdgriffith$elm_ui$Element$padding = function (x) {
+	var f = x;
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$padding,
+		A5(
+			$mdgriffith$elm_ui$Internal$Model$PaddingStyle,
+			'p-' + $elm$core$String$fromInt(x),
+			f,
+			f,
+			f,
+			f));
+};
+var $mdgriffith$elm_ui$Internal$Flag$cursor = $mdgriffith$elm_ui$Internal$Flag$flag(21);
+var $mdgriffith$elm_ui$Element$pointer = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$cursor, $mdgriffith$elm_ui$Internal$Style$classes.cursorPointer);
 var $mdgriffith$elm_ui$Internal$Flag$borderRound = $mdgriffith$elm_ui$Internal$Flag$flag(17);
 var $mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
 	return A2(
@@ -17796,25 +18315,24 @@ var $mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
 			$elm$core$String$fromInt(radius) + 'px'));
 };
 var $author$project$Views$Styles$tabbarBackgroundColor = A3($mdgriffith$elm_ui$Element$rgb255, 25, 28, 67);
+var $author$project$Views$Styles$white = A3($mdgriffith$elm_ui$Element$rgb255, 255, 255, 255);
 var $author$project$Views$Styles$smallButtonStyle = _List_fromArray(
 	[
-		A2(
-		$mdgriffith$elm_ui$Element$paddingXY,
-		$author$project$Views$Styles$paddingScale(2),
+		$mdgriffith$elm_ui$Element$padding(
 		$author$project$Views$Styles$paddingScale(2)),
 		$mdgriffith$elm_ui$Element$Border$color($author$project$Views$Styles$darkGray),
 		$mdgriffith$elm_ui$Element$Border$solid,
 		$mdgriffith$elm_ui$Element$Border$width(1),
 		$mdgriffith$elm_ui$Element$Border$rounded(10),
 		$mdgriffith$elm_ui$Element$Font$size(
-		$author$project$Views$Styles$scaled(5)),
+		$author$project$Views$Styles$scaled(3)),
 		$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$black),
-		$mdgriffith$elm_ui$Element$Font$extraBold,
+		$mdgriffith$elm_ui$Element$Font$bold,
 		$mdgriffith$elm_ui$Element$mouseDown(
 		_List_fromArray(
 			[
 				$mdgriffith$elm_ui$Element$Background$color($author$project$Views$Styles$tabbarBackgroundColor),
-				$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$orange)
+				$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$white)
 			])),
 		$mdgriffith$elm_ui$Element$pointer
 	]);
@@ -17927,6 +18445,36 @@ var $author$project$Views$Measurements$showControls = function (model) {
 					]))
 			]));
 };
+var $mdgriffith$elm_ui$Element$Font$extraBold = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$fontWeight, $mdgriffith$elm_ui$Internal$Style$classes.textExtraBold);
+var $mdgriffith$elm_ui$Element$paddingXY = F2(
+	function (x, y) {
+		if (_Utils_eq(x, y)) {
+			var f = x;
+			return A2(
+				$mdgriffith$elm_ui$Internal$Model$StyleClass,
+				$mdgriffith$elm_ui$Internal$Flag$padding,
+				A5(
+					$mdgriffith$elm_ui$Internal$Model$PaddingStyle,
+					'p-' + $elm$core$String$fromInt(x),
+					f,
+					f,
+					f,
+					f));
+		} else {
+			var yFloat = y;
+			var xFloat = x;
+			return A2(
+				$mdgriffith$elm_ui$Internal$Model$StyleClass,
+				$mdgriffith$elm_ui$Internal$Flag$padding,
+				A5(
+					$mdgriffith$elm_ui$Internal$Model$PaddingStyle,
+					'p-' + ($elm$core$String$fromInt(x) + ('-' + $elm$core$String$fromInt(y))),
+					yFloat,
+					xFloat,
+					yFloat,
+					xFloat));
+		}
+	});
 var $author$project$Views$Styles$boxStyle = function (bgcolor) {
 	return _List_fromArray(
 		[
@@ -18316,6 +18864,7 @@ var $cuducos$elm_format_number$FormatNumber$format = F2(
 			$elm$core$Maybe$Nothing,
 			A2($cuducos$elm_format_number$Parser$parse, locale, number_));
 	});
+var $author$project$Views$Styles$orange = A3($mdgriffith$elm_ui$Element$rgb255, 255, 50, 0);
 var $author$project$Views$Measurements$swissNumbers = function (dec) {
 	return {decimalSeparator: '.', decimals: dec, negativePrefix: '-', negativeSuffix: '', positivePrefix: '', positiveSuffix: '', thousandSeparator: '\''};
 };
@@ -18802,10 +19351,6 @@ var $author$project$Views$Measurements$viewMovement = function (myLocation) {
 					]))
 			]));
 };
-var $elm$time$Time$Posix = function (a) {
-	return {$: 'Posix', a: a};
-};
-var $elm$time$Time$millisToPosix = $elm$time$Time$Posix;
 var $elm$time$Time$flooredDiv = F2(
 	function (numerator, denominator) {
 		return $elm$core$Basics$floor(numerator / denominator);
@@ -19058,6 +19603,7 @@ var $author$project$Views$Measurements$showMeasurements = function (model) {
 							$author$project$Views$Measurements$viewMovement(model.myLocation)
 						])))));
 };
+var $mdgriffith$elm_ui$Element$none = $mdgriffith$elm_ui$Internal$Model$Empty;
 var $author$project$Model$ToggleShowDistance = {$: 'ToggleShowDistance'};
 var $danmarcab$material_icons$Material$Icons$Toggle$check_box = A2(
 	$danmarcab$material_icons$Material$Icons$Internal$icon,
@@ -19091,9 +19637,10 @@ var $author$project$Views$Styles$optionStyle = _List_fromArray(
 		$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
 		$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$lightGray),
 		$mdgriffith$elm_ui$Element$Font$size(
-		$author$project$Views$Styles$scaled(2)),
+		$author$project$Views$Styles$scaled(3)),
 		$mdgriffith$elm_ui$Element$paddingEach(
-		{bottom: 0, left: 0, right: 0, top: 10})
+		{bottom: 0, left: 10, right: 10, top: 10}),
+		$mdgriffith$elm_ui$Element$spacing(10)
 	]);
 var $author$project$Views$Settings$showDistance = function (checkDistance) {
 	var showCheckBox = checkDistance ? A2(
@@ -19108,13 +19655,13 @@ var $author$project$Views$Settings$showDistance = function (checkDistance) {
 	return A2(
 		$mdgriffith$elm_ui$Element$row,
 		_Utils_ap(
+			$author$project$Views$Styles$optionStyle,
 			_List_fromArray(
 				[
 					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
 					$mdgriffith$elm_ui$Element$spacing(20),
 					$mdgriffith$elm_ui$Element$Events$onClick($author$project$Model$ToggleShowDistance)
-				]),
-			$author$project$Views$Styles$optionStyle),
+				])),
 		_List_fromArray(
 			[
 				A2(
@@ -19131,9 +19678,1131 @@ var $author$project$Views$Settings$showDistance = function (checkDistance) {
 				$mdgriffith$elm_ui$Element$text('Distanz zu Referenzpunkt messen'))
 			]));
 };
+var $author$project$Model$ExportReferences = {$: 'ExportReferences'};
+var $author$project$Model$ImportRequested = {$: 'ImportRequested'};
+var $author$project$Model$ToggleAddReference = {$: 'ToggleAddReference'};
+var $danmarcab$material_icons$Material$Icons$Maps$add_location = A2(
+	$danmarcab$material_icons$Material$Icons$Internal$icon,
+	'0 0 48 48',
+	_List_fromArray(
+		[
+			A2(
+			$elm$svg$Svg$path,
+			_List_fromArray(
+				[
+					$elm$svg$Svg$Attributes$d('M24 4c-7.72 0-14 6.28-14 14 0 10.5 14 26 14 26s14-15.5 14-26c0-7.72-6.28-14-14-14zm8 16h-6v6h-4v-6h-6v-4h6v-6h4v6h6v4z')
+				]),
+			_List_Nil)
+		]));
+var $danmarcab$material_icons$Material$Icons$File$file_download = A2(
+	$danmarcab$material_icons$Material$Icons$Internal$icon,
+	'0 0 48 48',
+	_List_fromArray(
+		[
+			A2(
+			$elm$svg$Svg$path,
+			_List_fromArray(
+				[
+					$elm$svg$Svg$Attributes$d('M38 18h-8V6H18v12h-8l14 14 14-14zM10 36v4h28v-4H10z')
+				]),
+			_List_Nil)
+		]));
+var $danmarcab$material_icons$Material$Icons$File$file_upload = A2(
+	$danmarcab$material_icons$Material$Icons$Internal$icon,
+	'0 0 48 48',
+	_List_fromArray(
+		[
+			A2(
+			$elm$svg$Svg$path,
+			_List_fromArray(
+				[
+					$elm$svg$Svg$Attributes$d('M18 32h12V20h8L24 6 10 20h8zm-8 4h28v4H10z')
+				]),
+			_List_Nil)
+		]));
+var $author$project$Model$RefDescriptionChanged = function (a) {
+	return {$: 'RefDescriptionChanged', a: a};
+};
+var $author$project$Model$RefEastChanged = function (a) {
+	return {$: 'RefEastChanged', a: a};
+};
+var $author$project$Model$RefImgSrcChanged = function (a) {
+	return {$: 'RefImgSrcChanged', a: a};
+};
+var $author$project$Model$RefLocationSave = {$: 'RefLocationSave'};
+var $author$project$Model$RefNorthChanged = function (a) {
+	return {$: 'RefNorthChanged', a: a};
+};
+var $author$project$Model$RefTitleChanged = function (a) {
+	return {$: 'RefTitleChanged', a: a};
+};
+var $danmarcab$material_icons$Material$Icons$Navigation$cancel = A2(
+	$danmarcab$material_icons$Material$Icons$Internal$icon,
+	'0 0 48 48',
+	_List_fromArray(
+		[
+			A2(
+			$elm$svg$Svg$path,
+			_List_fromArray(
+				[
+					$elm$svg$Svg$Attributes$d('M24 4C12.95 4 4 12.95 4 24s8.95 20 20 20 20-8.95 20-20S35.05 4 24 4zm10 27.17L31.17 34 24 26.83 16.83 34 14 31.17 21.17 24 14 16.83 16.83 14 24 21.17 31.17 14 34 16.83 26.83 24 34 31.17z')
+				]),
+			_List_Nil)
+		]));
+var $elm$html$Html$Attributes$boolProperty = F2(
+	function (key, bool) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			$elm$json$Json$Encode$bool(bool));
+	});
+var $elm$html$Html$Attributes$autofocus = $elm$html$Html$Attributes$boolProperty('autofocus');
+var $mdgriffith$elm_ui$Element$Input$focusedOnLoad = $mdgriffith$elm_ui$Internal$Model$Attr(
+	$elm$html$Html$Attributes$autofocus(true));
+var $mdgriffith$elm_ui$Element$Input$Above = {$: 'Above'};
+var $mdgriffith$elm_ui$Element$Input$Label = F3(
+	function (a, b, c) {
+		return {$: 'Label', a: a, b: b, c: c};
+	});
+var $mdgriffith$elm_ui$Element$Input$labelAbove = $mdgriffith$elm_ui$Element$Input$Label($mdgriffith$elm_ui$Element$Input$Above);
+var $author$project$Views$Styles$lightLightGray = A3($mdgriffith$elm_ui$Element$rgb255, 225, 225, 225);
+var $mdgriffith$elm_ui$Element$Input$TextArea = {$: 'TextArea'};
+var $mdgriffith$elm_ui$Internal$Model$LivePolite = {$: 'LivePolite'};
+var $mdgriffith$elm_ui$Element$Region$announce = $mdgriffith$elm_ui$Internal$Model$Describe($mdgriffith$elm_ui$Internal$Model$LivePolite);
+var $mdgriffith$elm_ui$Element$Input$applyLabel = F3(
+	function (attrs, label, input) {
+		if (label.$ === 'HiddenLabel') {
+			var labelText = label.a;
+			return A4(
+				$mdgriffith$elm_ui$Internal$Model$element,
+				$mdgriffith$elm_ui$Internal$Model$asColumn,
+				$mdgriffith$elm_ui$Internal$Model$NodeName('label'),
+				attrs,
+				$mdgriffith$elm_ui$Internal$Model$Unkeyed(
+					_List_fromArray(
+						[input])));
+		} else {
+			var position = label.a;
+			var labelAttrs = label.b;
+			var labelChild = label.c;
+			var labelElement = A4(
+				$mdgriffith$elm_ui$Internal$Model$element,
+				$mdgriffith$elm_ui$Internal$Model$asEl,
+				$mdgriffith$elm_ui$Internal$Model$div,
+				labelAttrs,
+				$mdgriffith$elm_ui$Internal$Model$Unkeyed(
+					_List_fromArray(
+						[labelChild])));
+			switch (position.$) {
+				case 'Above':
+					return A4(
+						$mdgriffith$elm_ui$Internal$Model$element,
+						$mdgriffith$elm_ui$Internal$Model$asColumn,
+						$mdgriffith$elm_ui$Internal$Model$NodeName('label'),
+						A2(
+							$elm$core$List$cons,
+							$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.inputLabel),
+							attrs),
+						$mdgriffith$elm_ui$Internal$Model$Unkeyed(
+							_List_fromArray(
+								[labelElement, input])));
+				case 'Below':
+					return A4(
+						$mdgriffith$elm_ui$Internal$Model$element,
+						$mdgriffith$elm_ui$Internal$Model$asColumn,
+						$mdgriffith$elm_ui$Internal$Model$NodeName('label'),
+						A2(
+							$elm$core$List$cons,
+							$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.inputLabel),
+							attrs),
+						$mdgriffith$elm_ui$Internal$Model$Unkeyed(
+							_List_fromArray(
+								[input, labelElement])));
+				case 'OnRight':
+					return A4(
+						$mdgriffith$elm_ui$Internal$Model$element,
+						$mdgriffith$elm_ui$Internal$Model$asRow,
+						$mdgriffith$elm_ui$Internal$Model$NodeName('label'),
+						A2(
+							$elm$core$List$cons,
+							$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.inputLabel),
+							attrs),
+						$mdgriffith$elm_ui$Internal$Model$Unkeyed(
+							_List_fromArray(
+								[input, labelElement])));
+				default:
+					return A4(
+						$mdgriffith$elm_ui$Internal$Model$element,
+						$mdgriffith$elm_ui$Internal$Model$asRow,
+						$mdgriffith$elm_ui$Internal$Model$NodeName('label'),
+						A2(
+							$elm$core$List$cons,
+							$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.inputLabel),
+							attrs),
+						$mdgriffith$elm_ui$Internal$Model$Unkeyed(
+							_List_fromArray(
+								[labelElement, input])));
+			}
+		}
+	});
+var $elm$html$Html$Attributes$attribute = $elm$virtual_dom$VirtualDom$attribute;
+var $mdgriffith$elm_ui$Element$Input$autofill = A2(
+	$elm$core$Basics$composeL,
+	$mdgriffith$elm_ui$Internal$Model$Attr,
+	$elm$html$Html$Attributes$attribute('autocomplete'));
+var $mdgriffith$elm_ui$Internal$Model$Behind = {$: 'Behind'};
+var $mdgriffith$elm_ui$Element$createNearby = F2(
+	function (loc, element) {
+		if (element.$ === 'Empty') {
+			return $mdgriffith$elm_ui$Internal$Model$NoAttribute;
+		} else {
+			return A2($mdgriffith$elm_ui$Internal$Model$Nearby, loc, element);
+		}
+	});
+var $mdgriffith$elm_ui$Element$behindContent = function (element) {
+	return A2($mdgriffith$elm_ui$Element$createNearby, $mdgriffith$elm_ui$Internal$Model$Behind, element);
+};
+var $mdgriffith$elm_ui$Internal$Model$MoveY = function (a) {
+	return {$: 'MoveY', a: a};
+};
+var $mdgriffith$elm_ui$Internal$Flag$moveY = $mdgriffith$elm_ui$Internal$Flag$flag(26);
+var $mdgriffith$elm_ui$Element$moveUp = function (y) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$TransformComponent,
+		$mdgriffith$elm_ui$Internal$Flag$moveY,
+		$mdgriffith$elm_ui$Internal$Model$MoveY(-y));
+};
+var $mdgriffith$elm_ui$Element$Input$calcMoveToCompensateForPadding = function (attrs) {
+	var gatherSpacing = F2(
+		function (attr, found) {
+			if ((attr.$ === 'StyleClass') && (attr.b.$ === 'SpacingStyle')) {
+				var _v2 = attr.b;
+				var x = _v2.b;
+				var y = _v2.c;
+				if (found.$ === 'Nothing') {
+					return $elm$core$Maybe$Just(y);
+				} else {
+					return found;
+				}
+			} else {
+				return found;
+			}
+		});
+	var _v0 = A3($elm$core$List$foldr, gatherSpacing, $elm$core$Maybe$Nothing, attrs);
+	if (_v0.$ === 'Nothing') {
+		return $mdgriffith$elm_ui$Internal$Model$NoAttribute;
+	} else {
+		var vSpace = _v0.a;
+		return $mdgriffith$elm_ui$Element$moveUp(
+			$elm$core$Basics$floor(vSpace / 2));
+	}
+};
+var $mdgriffith$elm_ui$Internal$Flag$overflow = $mdgriffith$elm_ui$Internal$Flag$flag(20);
+var $mdgriffith$elm_ui$Element$clip = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$overflow, $mdgriffith$elm_ui$Internal$Style$classes.clip);
+var $mdgriffith$elm_ui$Element$rgb = F3(
+	function (r, g, b) {
+		return A4($mdgriffith$elm_ui$Internal$Model$Rgba, r, g, b, 1);
+	});
+var $mdgriffith$elm_ui$Element$Input$darkGrey = A3($mdgriffith$elm_ui$Element$rgb, 186 / 255, 189 / 255, 182 / 255);
+var $mdgriffith$elm_ui$Element$Input$defaultTextPadding = A2($mdgriffith$elm_ui$Element$paddingXY, 12, 12);
+var $mdgriffith$elm_ui$Element$Input$white = A3($mdgriffith$elm_ui$Element$rgb, 1, 1, 1);
+var $mdgriffith$elm_ui$Element$Input$defaultTextBoxStyle = _List_fromArray(
+	[
+		$mdgriffith$elm_ui$Element$Input$defaultTextPadding,
+		$mdgriffith$elm_ui$Element$Border$rounded(3),
+		$mdgriffith$elm_ui$Element$Border$color($mdgriffith$elm_ui$Element$Input$darkGrey),
+		$mdgriffith$elm_ui$Element$Background$color($mdgriffith$elm_ui$Element$Input$white),
+		$mdgriffith$elm_ui$Element$Border$width(1),
+		$mdgriffith$elm_ui$Element$spacing(5),
+		$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+		$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$shrink)
+	]);
+var $mdgriffith$elm_ui$Element$Input$getHeight = function (attr) {
+	if (attr.$ === 'Height') {
+		var h = attr.a;
+		return $elm$core$Maybe$Just(h);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
+var $mdgriffith$elm_ui$Element$Input$hasFocusStyle = function (attr) {
+	if (((attr.$ === 'StyleClass') && (attr.b.$ === 'PseudoSelector')) && (attr.b.a.$ === 'Focus')) {
+		var _v1 = attr.b;
+		var _v2 = _v1.a;
+		return true;
+	} else {
+		return false;
+	}
+};
+var $mdgriffith$elm_ui$Internal$Model$Label = function (a) {
+	return {$: 'Label', a: a};
+};
+var $mdgriffith$elm_ui$Element$Input$hiddenLabelAttribute = function (label) {
+	if (label.$ === 'HiddenLabel') {
+		var textLabel = label.a;
+		return $mdgriffith$elm_ui$Internal$Model$Describe(
+			$mdgriffith$elm_ui$Internal$Model$Label(textLabel));
+	} else {
+		return $mdgriffith$elm_ui$Internal$Model$NoAttribute;
+	}
+};
+var $mdgriffith$elm_ui$Internal$Model$InFront = {$: 'InFront'};
+var $mdgriffith$elm_ui$Element$inFront = function (element) {
+	return A2($mdgriffith$elm_ui$Element$createNearby, $mdgriffith$elm_ui$Internal$Model$InFront, element);
+};
+var $mdgriffith$elm_ui$Element$Input$isConstrained = function (len) {
+	isConstrained:
+	while (true) {
+		switch (len.$) {
+			case 'Content':
+				return false;
+			case 'Px':
+				return true;
+			case 'Fill':
+				return true;
+			case 'Min':
+				var l = len.b;
+				var $temp$len = l;
+				len = $temp$len;
+				continue isConstrained;
+			default:
+				var l = len.b;
+				return true;
+		}
+	}
+};
+var $mdgriffith$elm_ui$Element$Input$isHiddenLabel = function (label) {
+	if (label.$ === 'HiddenLabel') {
+		return true;
+	} else {
+		return false;
+	}
+};
+var $mdgriffith$elm_ui$Element$Input$isStacked = function (label) {
+	if (label.$ === 'Label') {
+		var loc = label.a;
+		switch (loc.$) {
+			case 'OnRight':
+				return false;
+			case 'OnLeft':
+				return false;
+			case 'Above':
+				return true;
+			default:
+				return true;
+		}
+	} else {
+		return true;
+	}
+};
+var $mdgriffith$elm_ui$Element$Input$negateBox = function (box) {
+	return {bottom: -box.bottom, left: -box.left, right: -box.right, top: -box.top};
+};
+var $mdgriffith$elm_ui$Element$htmlAttribute = $mdgriffith$elm_ui$Internal$Model$Attr;
+var $mdgriffith$elm_ui$Element$Input$isFill = function (len) {
+	isFill:
+	while (true) {
+		switch (len.$) {
+			case 'Fill':
+				return true;
+			case 'Content':
+				return false;
+			case 'Px':
+				return false;
+			case 'Min':
+				var l = len.b;
+				var $temp$len = l;
+				len = $temp$len;
+				continue isFill;
+			default:
+				var l = len.b;
+				var $temp$len = l;
+				len = $temp$len;
+				continue isFill;
+		}
+	}
+};
+var $mdgriffith$elm_ui$Element$Input$isPixel = function (len) {
+	isPixel:
+	while (true) {
+		switch (len.$) {
+			case 'Content':
+				return false;
+			case 'Px':
+				return true;
+			case 'Fill':
+				return false;
+			case 'Min':
+				var l = len.b;
+				var $temp$len = l;
+				len = $temp$len;
+				continue isPixel;
+			default:
+				var l = len.b;
+				var $temp$len = l;
+				len = $temp$len;
+				continue isPixel;
+		}
+	}
+};
+var $mdgriffith$elm_ui$Internal$Model$paddingNameFloat = F4(
+	function (top, right, bottom, left) {
+		return 'pad-' + ($mdgriffith$elm_ui$Internal$Model$floatClass(top) + ('-' + ($mdgriffith$elm_ui$Internal$Model$floatClass(right) + ('-' + ($mdgriffith$elm_ui$Internal$Model$floatClass(bottom) + ('-' + $mdgriffith$elm_ui$Internal$Model$floatClass(left)))))));
+	});
+var $mdgriffith$elm_ui$Element$Input$redistributeOver = F4(
+	function (isMultiline, stacked, attr, els) {
+		switch (attr.$) {
+			case 'Nearby':
+				return _Utils_update(
+					els,
+					{
+						parent: A2($elm$core$List$cons, attr, els.parent)
+					});
+			case 'Width':
+				var width = attr.a;
+				return $mdgriffith$elm_ui$Element$Input$isFill(width) ? _Utils_update(
+					els,
+					{
+						fullParent: A2($elm$core$List$cons, attr, els.fullParent),
+						input: A2($elm$core$List$cons, attr, els.input),
+						parent: A2($elm$core$List$cons, attr, els.parent)
+					}) : (stacked ? _Utils_update(
+					els,
+					{
+						fullParent: A2($elm$core$List$cons, attr, els.fullParent)
+					}) : _Utils_update(
+					els,
+					{
+						parent: A2($elm$core$List$cons, attr, els.parent)
+					}));
+			case 'Height':
+				var height = attr.a;
+				return (!stacked) ? _Utils_update(
+					els,
+					{
+						fullParent: A2($elm$core$List$cons, attr, els.fullParent),
+						parent: A2($elm$core$List$cons, attr, els.parent)
+					}) : ($mdgriffith$elm_ui$Element$Input$isFill(height) ? _Utils_update(
+					els,
+					{
+						fullParent: A2($elm$core$List$cons, attr, els.fullParent),
+						parent: A2($elm$core$List$cons, attr, els.parent)
+					}) : ($mdgriffith$elm_ui$Element$Input$isPixel(height) ? _Utils_update(
+					els,
+					{
+						parent: A2($elm$core$List$cons, attr, els.parent)
+					}) : _Utils_update(
+					els,
+					{
+						parent: A2($elm$core$List$cons, attr, els.parent)
+					})));
+			case 'AlignX':
+				return _Utils_update(
+					els,
+					{
+						fullParent: A2($elm$core$List$cons, attr, els.fullParent)
+					});
+			case 'AlignY':
+				return _Utils_update(
+					els,
+					{
+						fullParent: A2($elm$core$List$cons, attr, els.fullParent)
+					});
+			case 'StyleClass':
+				switch (attr.b.$) {
+					case 'SpacingStyle':
+						var _v1 = attr.b;
+						return _Utils_update(
+							els,
+							{
+								fullParent: A2($elm$core$List$cons, attr, els.fullParent),
+								input: A2($elm$core$List$cons, attr, els.input),
+								parent: A2($elm$core$List$cons, attr, els.parent),
+								wrapper: A2($elm$core$List$cons, attr, els.wrapper)
+							});
+					case 'PaddingStyle':
+						var cls = attr.a;
+						var _v2 = attr.b;
+						var pad = _v2.a;
+						var t = _v2.b;
+						var r = _v2.c;
+						var b = _v2.d;
+						var l = _v2.e;
+						if (isMultiline) {
+							return _Utils_update(
+								els,
+								{
+									cover: A2($elm$core$List$cons, attr, els.cover),
+									parent: A2($elm$core$List$cons, attr, els.parent)
+								});
+						} else {
+							var newTop = t - A2($elm$core$Basics$min, t, b);
+							var newLineHeight = $mdgriffith$elm_ui$Element$htmlAttribute(
+								A2(
+									$elm$html$Html$Attributes$style,
+									'line-height',
+									'calc(1.0em + ' + ($elm$core$String$fromFloat(
+										2 * A2($elm$core$Basics$min, t, b)) + 'px)')));
+							var newHeight = $mdgriffith$elm_ui$Element$htmlAttribute(
+								A2(
+									$elm$html$Html$Attributes$style,
+									'height',
+									'calc(1.0em + ' + ($elm$core$String$fromFloat(
+										2 * A2($elm$core$Basics$min, t, b)) + 'px)')));
+							var newBottom = b - A2($elm$core$Basics$min, t, b);
+							var reducedVerticalPadding = A2(
+								$mdgriffith$elm_ui$Internal$Model$StyleClass,
+								$mdgriffith$elm_ui$Internal$Flag$padding,
+								A5(
+									$mdgriffith$elm_ui$Internal$Model$PaddingStyle,
+									A4($mdgriffith$elm_ui$Internal$Model$paddingNameFloat, newTop, r, newBottom, l),
+									newTop,
+									r,
+									newBottom,
+									l));
+							return _Utils_update(
+								els,
+								{
+									cover: A2($elm$core$List$cons, attr, els.cover),
+									input: A2(
+										$elm$core$List$cons,
+										newHeight,
+										A2($elm$core$List$cons, newLineHeight, els.input)),
+									parent: A2($elm$core$List$cons, reducedVerticalPadding, els.parent)
+								});
+						}
+					case 'BorderWidth':
+						var _v3 = attr.b;
+						return _Utils_update(
+							els,
+							{
+								cover: A2($elm$core$List$cons, attr, els.cover),
+								parent: A2($elm$core$List$cons, attr, els.parent)
+							});
+					case 'Transform':
+						return _Utils_update(
+							els,
+							{
+								cover: A2($elm$core$List$cons, attr, els.cover),
+								parent: A2($elm$core$List$cons, attr, els.parent)
+							});
+					case 'FontSize':
+						return _Utils_update(
+							els,
+							{
+								fullParent: A2($elm$core$List$cons, attr, els.fullParent)
+							});
+					case 'FontFamily':
+						var _v4 = attr.b;
+						return _Utils_update(
+							els,
+							{
+								fullParent: A2($elm$core$List$cons, attr, els.fullParent)
+							});
+					default:
+						var flag = attr.a;
+						var cls = attr.b;
+						return _Utils_update(
+							els,
+							{
+								parent: A2($elm$core$List$cons, attr, els.parent)
+							});
+				}
+			case 'NoAttribute':
+				return els;
+			case 'Attr':
+				var a = attr.a;
+				return _Utils_update(
+					els,
+					{
+						input: A2($elm$core$List$cons, attr, els.input)
+					});
+			case 'Describe':
+				return _Utils_update(
+					els,
+					{
+						input: A2($elm$core$List$cons, attr, els.input)
+					});
+			case 'Class':
+				return _Utils_update(
+					els,
+					{
+						parent: A2($elm$core$List$cons, attr, els.parent)
+					});
+			default:
+				return _Utils_update(
+					els,
+					{
+						input: A2($elm$core$List$cons, attr, els.input)
+					});
+		}
+	});
+var $mdgriffith$elm_ui$Element$Input$redistribute = F3(
+	function (isMultiline, stacked, attrs) {
+		return function (redist) {
+			return {
+				cover: $elm$core$List$reverse(redist.cover),
+				fullParent: $elm$core$List$reverse(redist.fullParent),
+				input: $elm$core$List$reverse(redist.input),
+				parent: $elm$core$List$reverse(redist.parent),
+				wrapper: $elm$core$List$reverse(redist.wrapper)
+			};
+		}(
+			A3(
+				$elm$core$List$foldl,
+				A2($mdgriffith$elm_ui$Element$Input$redistributeOver, isMultiline, stacked),
+				{cover: _List_Nil, fullParent: _List_Nil, input: _List_Nil, parent: _List_Nil, wrapper: _List_Nil},
+				attrs));
+	});
+var $mdgriffith$elm_ui$Element$Input$renderBox = function (_v0) {
+	var top = _v0.top;
+	var right = _v0.right;
+	var bottom = _v0.bottom;
+	var left = _v0.left;
+	return $elm$core$String$fromInt(top) + ('px ' + ($elm$core$String$fromInt(right) + ('px ' + ($elm$core$String$fromInt(bottom) + ('px ' + ($elm$core$String$fromInt(left) + 'px'))))));
+};
+var $mdgriffith$elm_ui$Internal$Model$Transparency = F2(
+	function (a, b) {
+		return {$: 'Transparency', a: a, b: b};
+	});
+var $mdgriffith$elm_ui$Internal$Flag$transparency = $mdgriffith$elm_ui$Internal$Flag$flag(0);
+var $mdgriffith$elm_ui$Element$alpha = function (o) {
+	var transparency = function (x) {
+		return 1 - x;
+	}(
+		A2(
+			$elm$core$Basics$min,
+			1.0,
+			A2($elm$core$Basics$max, 0.0, o)));
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$transparency,
+		A2(
+			$mdgriffith$elm_ui$Internal$Model$Transparency,
+			'transparency-' + $mdgriffith$elm_ui$Internal$Model$floatClass(transparency),
+			transparency));
+};
+var $mdgriffith$elm_ui$Element$Input$charcoal = A3($mdgriffith$elm_ui$Element$rgb, 136 / 255, 138 / 255, 133 / 255);
+var $mdgriffith$elm_ui$Element$rgba = $mdgriffith$elm_ui$Internal$Model$Rgba;
+var $mdgriffith$elm_ui$Element$Input$renderPlaceholder = F3(
+	function (_v0, forPlaceholder, on) {
+		var placeholderAttrs = _v0.a;
+		var placeholderEl = _v0.b;
+		return A2(
+			$mdgriffith$elm_ui$Element$el,
+			_Utils_ap(
+				forPlaceholder,
+				_Utils_ap(
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$Font$color($mdgriffith$elm_ui$Element$Input$charcoal),
+							$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.noTextSelection + (' ' + $mdgriffith$elm_ui$Internal$Style$classes.passPointerEvents)),
+							$mdgriffith$elm_ui$Element$clip,
+							$mdgriffith$elm_ui$Element$Border$color(
+							A4($mdgriffith$elm_ui$Element$rgba, 0, 0, 0, 0)),
+							$mdgriffith$elm_ui$Element$Background$color(
+							A4($mdgriffith$elm_ui$Element$rgba, 0, 0, 0, 0)),
+							$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
+							$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+							$mdgriffith$elm_ui$Element$alpha(
+							on ? 1 : 0)
+						]),
+					placeholderAttrs)),
+			placeholderEl);
+	});
+var $mdgriffith$elm_ui$Element$scrollbarY = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$overflow, $mdgriffith$elm_ui$Internal$Style$classes.scrollbarsY);
+var $elm$html$Html$Attributes$spellcheck = $elm$html$Html$Attributes$boolProperty('spellcheck');
+var $mdgriffith$elm_ui$Element$Input$spellcheck = A2($elm$core$Basics$composeL, $mdgriffith$elm_ui$Internal$Model$Attr, $elm$html$Html$Attributes$spellcheck);
+var $mdgriffith$elm_ui$Element$Input$value = A2($elm$core$Basics$composeL, $mdgriffith$elm_ui$Internal$Model$Attr, $elm$html$Html$Attributes$value);
+var $mdgriffith$elm_ui$Element$Input$textHelper = F3(
+	function (textInput, attrs, textOptions) {
+		var withDefaults = _Utils_ap($mdgriffith$elm_ui$Element$Input$defaultTextBoxStyle, attrs);
+		var redistributed = A3(
+			$mdgriffith$elm_ui$Element$Input$redistribute,
+			_Utils_eq(textInput.type_, $mdgriffith$elm_ui$Element$Input$TextArea),
+			$mdgriffith$elm_ui$Element$Input$isStacked(textOptions.label),
+			withDefaults);
+		var onlySpacing = function (attr) {
+			if ((attr.$ === 'StyleClass') && (attr.b.$ === 'SpacingStyle')) {
+				var _v9 = attr.b;
+				return true;
+			} else {
+				return false;
+			}
+		};
+		var heightConstrained = function () {
+			var _v7 = textInput.type_;
+			if (_v7.$ === 'TextInputNode') {
+				var inputType = _v7.a;
+				return false;
+			} else {
+				return A2(
+					$elm$core$Maybe$withDefault,
+					false,
+					A2(
+						$elm$core$Maybe$map,
+						$mdgriffith$elm_ui$Element$Input$isConstrained,
+						$elm$core$List$head(
+							$elm$core$List$reverse(
+								A2($elm$core$List$filterMap, $mdgriffith$elm_ui$Element$Input$getHeight, withDefaults)))));
+			}
+		}();
+		var getPadding = function (attr) {
+			if ((attr.$ === 'StyleClass') && (attr.b.$ === 'PaddingStyle')) {
+				var cls = attr.a;
+				var _v6 = attr.b;
+				var pad = _v6.a;
+				var t = _v6.b;
+				var r = _v6.c;
+				var b = _v6.d;
+				var l = _v6.e;
+				return $elm$core$Maybe$Just(
+					{
+						bottom: A2(
+							$elm$core$Basics$max,
+							0,
+							$elm$core$Basics$floor(b - 3)),
+						left: A2(
+							$elm$core$Basics$max,
+							0,
+							$elm$core$Basics$floor(l - 3)),
+						right: A2(
+							$elm$core$Basics$max,
+							0,
+							$elm$core$Basics$floor(r - 3)),
+						top: A2(
+							$elm$core$Basics$max,
+							0,
+							$elm$core$Basics$floor(t - 3))
+					});
+			} else {
+				return $elm$core$Maybe$Nothing;
+			}
+		};
+		var parentPadding = A2(
+			$elm$core$Maybe$withDefault,
+			{bottom: 0, left: 0, right: 0, top: 0},
+			$elm$core$List$head(
+				$elm$core$List$reverse(
+					A2($elm$core$List$filterMap, getPadding, withDefaults))));
+		var inputElement = A4(
+			$mdgriffith$elm_ui$Internal$Model$element,
+			$mdgriffith$elm_ui$Internal$Model$asEl,
+			function () {
+				var _v3 = textInput.type_;
+				if (_v3.$ === 'TextInputNode') {
+					var inputType = _v3.a;
+					return $mdgriffith$elm_ui$Internal$Model$NodeName('input');
+				} else {
+					return $mdgriffith$elm_ui$Internal$Model$NodeName('textarea');
+				}
+			}(),
+			_Utils_ap(
+				function () {
+					var _v4 = textInput.type_;
+					if (_v4.$ === 'TextInputNode') {
+						var inputType = _v4.a;
+						return _List_fromArray(
+							[
+								$mdgriffith$elm_ui$Internal$Model$Attr(
+								$elm$html$Html$Attributes$type_(inputType)),
+								$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.inputText)
+							]);
+					} else {
+						return _List_fromArray(
+							[
+								$mdgriffith$elm_ui$Element$clip,
+								$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
+								$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.inputMultiline),
+								$mdgriffith$elm_ui$Element$Input$calcMoveToCompensateForPadding(withDefaults),
+								$mdgriffith$elm_ui$Element$paddingEach(parentPadding),
+								$mdgriffith$elm_ui$Internal$Model$Attr(
+								A2(
+									$elm$html$Html$Attributes$style,
+									'margin',
+									$mdgriffith$elm_ui$Element$Input$renderBox(
+										$mdgriffith$elm_ui$Element$Input$negateBox(parentPadding)))),
+								$mdgriffith$elm_ui$Internal$Model$Attr(
+								A2($elm$html$Html$Attributes$style, 'box-sizing', 'content-box'))
+							]);
+					}
+				}(),
+				_Utils_ap(
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$Input$value(textOptions.text),
+							$mdgriffith$elm_ui$Internal$Model$Attr(
+							$elm$html$Html$Events$onInput(textOptions.onChange)),
+							$mdgriffith$elm_ui$Element$Input$hiddenLabelAttribute(textOptions.label),
+							$mdgriffith$elm_ui$Element$Input$spellcheck(textInput.spellchecked),
+							A2(
+							$elm$core$Maybe$withDefault,
+							$mdgriffith$elm_ui$Internal$Model$NoAttribute,
+							A2($elm$core$Maybe$map, $mdgriffith$elm_ui$Element$Input$autofill, textInput.autofill))
+						]),
+					redistributed.input)),
+			$mdgriffith$elm_ui$Internal$Model$Unkeyed(_List_Nil));
+		var wrappedInput = function () {
+			var _v0 = textInput.type_;
+			if (_v0.$ === 'TextArea') {
+				return A4(
+					$mdgriffith$elm_ui$Internal$Model$element,
+					$mdgriffith$elm_ui$Internal$Model$asEl,
+					$mdgriffith$elm_ui$Internal$Model$div,
+					_Utils_ap(
+						(heightConstrained ? $elm$core$List$cons($mdgriffith$elm_ui$Element$scrollbarY) : $elm$core$Basics$identity)(
+							_List_fromArray(
+								[
+									$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+									A2($elm$core$List$any, $mdgriffith$elm_ui$Element$Input$hasFocusStyle, withDefaults) ? $mdgriffith$elm_ui$Internal$Model$NoAttribute : $mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.focusedWithin),
+									$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.inputMultilineWrapper)
+								])),
+						redistributed.parent),
+					$mdgriffith$elm_ui$Internal$Model$Unkeyed(
+						_List_fromArray(
+							[
+								A4(
+								$mdgriffith$elm_ui$Internal$Model$element,
+								$mdgriffith$elm_ui$Internal$Model$asParagraph,
+								$mdgriffith$elm_ui$Internal$Model$div,
+								A2(
+									$elm$core$List$cons,
+									$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+									A2(
+										$elm$core$List$cons,
+										$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
+										A2(
+											$elm$core$List$cons,
+											$mdgriffith$elm_ui$Element$inFront(inputElement),
+											A2(
+												$elm$core$List$cons,
+												$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.inputMultilineParent),
+												redistributed.wrapper)))),
+								$mdgriffith$elm_ui$Internal$Model$Unkeyed(
+									function () {
+										if (textOptions.text === '') {
+											var _v1 = textOptions.placeholder;
+											if (_v1.$ === 'Nothing') {
+												return _List_fromArray(
+													[
+														$mdgriffith$elm_ui$Element$text('\u00A0')
+													]);
+											} else {
+												var place = _v1.a;
+												return _List_fromArray(
+													[
+														A3($mdgriffith$elm_ui$Element$Input$renderPlaceholder, place, _List_Nil, textOptions.text === '')
+													]);
+											}
+										} else {
+											return _List_fromArray(
+												[
+													$mdgriffith$elm_ui$Internal$Model$unstyled(
+													A2(
+														$elm$html$Html$span,
+														_List_fromArray(
+															[
+																$elm$html$Html$Attributes$class($mdgriffith$elm_ui$Internal$Style$classes.inputMultilineFiller)
+															]),
+														_List_fromArray(
+															[
+																$elm$html$Html$text(textOptions.text + '\u00A0')
+															])))
+												]);
+										}
+									}()))
+							])));
+			} else {
+				var inputType = _v0.a;
+				return A4(
+					$mdgriffith$elm_ui$Internal$Model$element,
+					$mdgriffith$elm_ui$Internal$Model$asEl,
+					$mdgriffith$elm_ui$Internal$Model$div,
+					A2(
+						$elm$core$List$cons,
+						$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+						A2(
+							$elm$core$List$cons,
+							A2($elm$core$List$any, $mdgriffith$elm_ui$Element$Input$hasFocusStyle, withDefaults) ? $mdgriffith$elm_ui$Internal$Model$NoAttribute : $mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.focusedWithin),
+							$elm$core$List$concat(
+								_List_fromArray(
+									[
+										redistributed.parent,
+										function () {
+										var _v2 = textOptions.placeholder;
+										if (_v2.$ === 'Nothing') {
+											return _List_Nil;
+										} else {
+											var place = _v2.a;
+											return _List_fromArray(
+												[
+													$mdgriffith$elm_ui$Element$behindContent(
+													A3($mdgriffith$elm_ui$Element$Input$renderPlaceholder, place, redistributed.cover, textOptions.text === ''))
+												]);
+										}
+									}()
+									])))),
+					$mdgriffith$elm_ui$Internal$Model$Unkeyed(
+						_List_fromArray(
+							[inputElement])));
+			}
+		}();
+		return A3(
+			$mdgriffith$elm_ui$Element$Input$applyLabel,
+			A2(
+				$elm$core$List$cons,
+				A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$cursor, $mdgriffith$elm_ui$Internal$Style$classes.cursorText),
+				A2(
+					$elm$core$List$cons,
+					$mdgriffith$elm_ui$Element$Input$isHiddenLabel(textOptions.label) ? $mdgriffith$elm_ui$Internal$Model$NoAttribute : $mdgriffith$elm_ui$Element$spacing(5),
+					A2($elm$core$List$cons, $mdgriffith$elm_ui$Element$Region$announce, redistributed.fullParent))),
+			textOptions.label,
+			wrappedInput);
+	});
+var $mdgriffith$elm_ui$Element$Input$multiline = F2(
+	function (attrs, multi) {
+		return A3(
+			$mdgriffith$elm_ui$Element$Input$textHelper,
+			{autofill: $elm$core$Maybe$Nothing, spellchecked: multi.spellcheck, type_: $mdgriffith$elm_ui$Element$Input$TextArea},
+			attrs,
+			{label: multi.label, onChange: multi.onChange, placeholder: multi.placeholder, text: multi.text});
+	});
+var $mdgriffith$elm_ui$Element$Input$Placeholder = F2(
+	function (a, b) {
+		return {$: 'Placeholder', a: a, b: b};
+	});
+var $mdgriffith$elm_ui$Element$Input$placeholder = $mdgriffith$elm_ui$Element$Input$Placeholder;
+var $danmarcab$material_icons$Material$Icons$Content$save = A2(
+	$danmarcab$material_icons$Material$Icons$Internal$icon,
+	'0 0 48 48',
+	_List_fromArray(
+		[
+			A2(
+			$elm$svg$Svg$path,
+			_List_fromArray(
+				[
+					$elm$svg$Svg$Attributes$d('M34 6H10c-2.21 0-4 1.79-4 4v28c0 2.21 1.79 4 4 4h28c2.21 0 4-1.79 4-4V14l-8-8zM24 38c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm6-20H10v-8h20v8z')
+				]),
+			_List_Nil)
+		]));
+var $author$project$Views$Settings$showRefAddButton = F3(
+	function (icon, btnText, event) {
+		return A2(
+			$mdgriffith$elm_ui$Element$row,
+			_Utils_ap(
+				$author$project$Views$Styles$smallButtonStyle,
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$Events$onClick(event),
+						A2($mdgriffith$elm_ui$Element$paddingXY, 10, 10),
+						$mdgriffith$elm_ui$Element$spacing(10)
+					])),
+			_List_fromArray(
+				[
+					A2(
+					$mdgriffith$elm_ui$Element$el,
+					_List_Nil,
+					$mdgriffith$elm_ui$Element$html(
+						A2(
+							icon,
+							$avh4$elm_color$Color$lightBlue,
+							$author$project$Views$Styles$scaled(5)))),
+					A2(
+					$mdgriffith$elm_ui$Element$el,
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$darkGray)
+						]),
+					$mdgriffith$elm_ui$Element$text(btnText))
+				]));
+	});
+var $mdgriffith$elm_ui$Element$spacingXY = F2(
+	function (x, y) {
+		return A2(
+			$mdgriffith$elm_ui$Internal$Model$StyleClass,
+			$mdgriffith$elm_ui$Internal$Flag$spacing,
+			A3(
+				$mdgriffith$elm_ui$Internal$Model$SpacingStyle,
+				A2($mdgriffith$elm_ui$Internal$Model$spacingName, x, y),
+				x,
+				y));
+	});
+var $mdgriffith$elm_ui$Element$Input$TextInputNode = function (a) {
+	return {$: 'TextInputNode', a: a};
+};
+var $mdgriffith$elm_ui$Element$Input$text = $mdgriffith$elm_ui$Element$Input$textHelper(
+	{
+		autofill: $elm$core$Maybe$Nothing,
+		spellchecked: false,
+		type_: $mdgriffith$elm_ui$Element$Input$TextInputNode('text')
+	});
+var $author$project$Views$Settings$showAddReferceForm = function (model) {
+	var labelStyle = _List_fromArray(
+		[
+			$mdgriffith$elm_ui$Element$Font$size(
+			$author$project$Views$Styles$scaled(2)),
+			$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$lightGray)
+		]);
+	var inputStyle = _List_fromArray(
+		[
+			$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+			$mdgriffith$elm_ui$Element$Background$color($author$project$Views$Styles$lightLightGray),
+			$mdgriffith$elm_ui$Element$Font$size(
+			$author$project$Views$Styles$scaled(3)),
+			$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$black)
+		]);
+	var imgUrl = $elm$core$String$isEmpty(model.refImgSrc) ? $author$project$Views$Helpers$imgUrlFromWms(
+		_Utils_Tuple2(model.refEast, model.refNorth)) : model.refImgSrc;
+	return A2(
+		$mdgriffith$elm_ui$Element$column,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
+				A2($mdgriffith$elm_ui$Element$paddingXY, 15, 10),
+				$mdgriffith$elm_ui$Element$spacing(15),
+				$mdgriffith$elm_ui$Element$scrollbarY
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$mdgriffith$elm_ui$Element$Input$text,
+				A2($elm$core$List$cons, $mdgriffith$elm_ui$Element$Input$focusedOnLoad, inputStyle),
+				{
+					label: A2(
+						$mdgriffith$elm_ui$Element$Input$labelAbove,
+						labelStyle,
+						A2(
+							$mdgriffith$elm_ui$Element$el,
+							_List_Nil,
+							$mdgriffith$elm_ui$Element$text('Bezeichnung Referenz-Punkt'))),
+					onChange: $author$project$Model$RefTitleChanged,
+					placeholder: $elm$core$Maybe$Just(
+						A2(
+							$mdgriffith$elm_ui$Element$Input$placeholder,
+							_List_Nil,
+							$mdgriffith$elm_ui$Element$text('Bezeichnung'))),
+					text: model.refTitle
+				}),
+				A2(
+				$mdgriffith$elm_ui$Element$Input$multiline,
+				inputStyle,
+				{
+					label: A2(
+						$mdgriffith$elm_ui$Element$Input$labelAbove,
+						labelStyle,
+						A2(
+							$mdgriffith$elm_ui$Element$el,
+							_List_Nil,
+							$mdgriffith$elm_ui$Element$text('Beschreibung'))),
+					onChange: $author$project$Model$RefDescriptionChanged,
+					placeholder: $elm$core$Maybe$Just(
+						A2(
+							$mdgriffith$elm_ui$Element$Input$placeholder,
+							_List_Nil,
+							$mdgriffith$elm_ui$Element$text('Beschreibung (Markdown)'))),
+					spellcheck: false,
+					text: model.refMdDescription
+				}),
+				A2(
+				$mdgriffith$elm_ui$Element$row,
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+						$mdgriffith$elm_ui$Element$spacing(20)
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$mdgriffith$elm_ui$Element$Input$text,
+						inputStyle,
+						{
+							label: A2(
+								$mdgriffith$elm_ui$Element$Input$labelAbove,
+								labelStyle,
+								A2(
+									$mdgriffith$elm_ui$Element$el,
+									_List_Nil,
+									$mdgriffith$elm_ui$Element$text('X-Koordinate'))),
+							onChange: $author$project$Model$RefEastChanged,
+							placeholder: $elm$core$Maybe$Just(
+								A2(
+									$mdgriffith$elm_ui$Element$Input$placeholder,
+									_List_Nil,
+									$mdgriffith$elm_ui$Element$text('Ost-Koordinate'))),
+							text: $elm$core$String$fromFloat(model.refEast)
+						}),
+						A2(
+						$mdgriffith$elm_ui$Element$Input$text,
+						inputStyle,
+						{
+							label: A2(
+								$mdgriffith$elm_ui$Element$Input$labelAbove,
+								labelStyle,
+								A2(
+									$mdgriffith$elm_ui$Element$el,
+									_List_Nil,
+									$mdgriffith$elm_ui$Element$text('Y-Koordinate'))),
+							onChange: $author$project$Model$RefNorthChanged,
+							placeholder: $elm$core$Maybe$Just(
+								A2(
+									$mdgriffith$elm_ui$Element$Input$placeholder,
+									_List_Nil,
+									$mdgriffith$elm_ui$Element$text('Nord-Koordinate'))),
+							text: $elm$core$String$fromFloat(model.refNorth)
+						})
+					])),
+				A2(
+				$mdgriffith$elm_ui$Element$Input$text,
+				inputStyle,
+				{
+					label: A2(
+						$mdgriffith$elm_ui$Element$Input$labelAbove,
+						labelStyle,
+						A2(
+							$mdgriffith$elm_ui$Element$el,
+							_List_Nil,
+							$mdgriffith$elm_ui$Element$text('URL Referenzpunkt-Bild'))),
+					onChange: $author$project$Model$RefImgSrcChanged,
+					placeholder: $elm$core$Maybe$Just(
+						A2(
+							$mdgriffith$elm_ui$Element$Input$placeholder,
+							_List_Nil,
+							$mdgriffith$elm_ui$Element$text('Pfad zum Referenzpunkt-Bild https://www....'))),
+					text: model.refImgSrc
+				}),
+				A2(
+				$mdgriffith$elm_ui$Element$image,
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
+					]),
+				{description: model.refTitle, src: imgUrl}),
+				A2(
+				$mdgriffith$elm_ui$Element$row,
+				_List_fromArray(
+					[
+						A2($mdgriffith$elm_ui$Element$spacingXY, 20, 0)
+					]),
+				_List_fromArray(
+					[
+						A3($author$project$Views$Settings$showRefAddButton, $danmarcab$material_icons$Material$Icons$Navigation$cancel, 'Abbrechen', $author$project$Model$ToggleAddReference),
+						A3($author$project$Views$Settings$showRefAddButton, $danmarcab$material_icons$Material$Icons$Content$save, 'Speichern', $author$project$Model$RefLocationSave)
+					]))
+			]));
+};
+var $author$project$Views$Settings$showImportExport = $author$project$Views$Helpers$sectionTitle('Referenzpunkte importieren / exportieren');
 var $author$project$Model$ChangeRefLocation = function (a) {
 	return {$: 'ChangeRefLocation', a: a};
 };
+var $author$project$Model$RefLocationDelete = function (a) {
+	return {$: 'RefLocationDelete', a: a};
+};
+var $author$project$Model$RefLocationEdit = function (a) {
+	return {$: 'RefLocationEdit', a: a};
+};
+var $mdgriffith$elm_ui$Internal$Model$Right = {$: 'Right'};
+var $mdgriffith$elm_ui$Element$alignRight = $mdgriffith$elm_ui$Internal$Model$AlignX($mdgriffith$elm_ui$Internal$Model$Right);
 var $danmarcab$material_icons$Material$Icons$Action$check_circle = A2(
 	$danmarcab$material_icons$Material$Icons$Internal$icon,
 	'0 0 48 48',
@@ -19144,6 +20813,63 @@ var $danmarcab$material_icons$Material$Icons$Action$check_circle = A2(
 			_List_fromArray(
 				[
 					$elm$svg$Svg$Attributes$d('M24 4C12.95 4 4 12.95 4 24c0 11.04 8.95 20 20 20 11.04 0 20-8.96 20-20 0-11.05-8.96-20-20-20zm-4 30L10 24l2.83-2.83L20 28.34l15.17-15.17L38 16 20 34z')
+				]),
+			_List_Nil)
+		]));
+var $author$project$Views$Styles$darkDarkGray = A3($mdgriffith$elm_ui$Element$rgb255, 75, 75, 75);
+var $danmarcab$material_icons$Material$Icons$Action$delete = A2(
+	$danmarcab$material_icons$Material$Icons$Internal$icon,
+	'0 0 48 48',
+	_List_fromArray(
+		[
+			A2(
+			$elm$svg$Svg$path,
+			_List_fromArray(
+				[
+					$elm$svg$Svg$Attributes$d('M12 38c0 2.21 1.79 4 4 4h16c2.21 0 4-1.79 4-4V14H12v24zM38 8h-7l-2-2H19l-2 2h-7v4h28V8z')
+				]),
+			_List_Nil)
+		]));
+var $mdgriffith$elm_ui$Internal$Model$Hover = {$: 'Hover'};
+var $mdgriffith$elm_ui$Internal$Flag$hover = $mdgriffith$elm_ui$Internal$Flag$flag(33);
+var $mdgriffith$elm_ui$Element$mouseOver = function (decs) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$hover,
+		A2(
+			$mdgriffith$elm_ui$Internal$Model$PseudoSelector,
+			$mdgriffith$elm_ui$Internal$Model$Hover,
+			$mdgriffith$elm_ui$Internal$Model$unwrapDecorations(decs)));
+};
+var $author$project$Views$Styles$iconButtonStyle = _List_fromArray(
+	[
+		$mdgriffith$elm_ui$Element$padding(5),
+		$mdgriffith$elm_ui$Element$Border$color($author$project$Views$Styles$darkGray),
+		$mdgriffith$elm_ui$Element$Border$solid,
+		$mdgriffith$elm_ui$Element$Border$width(1),
+		$mdgriffith$elm_ui$Element$Border$rounded(10),
+		$mdgriffith$elm_ui$Element$mouseOver(
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$Background$color($author$project$Views$Styles$darkDarkGray)
+			])),
+		$mdgriffith$elm_ui$Element$mouseDown(
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$Background$color($author$project$Views$Styles$tabbarBackgroundColor)
+			])),
+		$mdgriffith$elm_ui$Element$pointer
+	]);
+var $danmarcab$material_icons$Material$Icons$Editor$mode_edit = A2(
+	$danmarcab$material_icons$Material$Icons$Internal$icon,
+	'0 0 48 48',
+	_List_fromArray(
+		[
+			A2(
+			$elm$svg$Svg$path,
+			_List_fromArray(
+				[
+					$elm$svg$Svg$Attributes$d('M6 34.5V42h7.5l22.13-22.13-7.5-7.5L6 34.5zm35.41-20.41c.78-.78.78-2.05 0-2.83l-4.67-4.67c-.78-.78-2.05-.78-2.83 0l-3.66 3.66 7.5 7.5 3.66-3.66z')
 				]),
 			_List_Nil)
 		]));
@@ -19160,91 +20886,295 @@ var $danmarcab$material_icons$Material$Icons$Toggle$radio_button_unchecked = A2(
 				]),
 			_List_Nil)
 		]));
-var $author$project$Views$Settings$showReferceLocations = function (model) {
-	var selected = function (ort) {
-		return _Utils_eq(ort, model.refLocation.a) ? A2(
-			$mdgriffith$elm_ui$Element$el,
-			_List_Nil,
-			$mdgriffith$elm_ui$Element$html(
-				A2($danmarcab$material_icons$Material$Icons$Action$check_circle, $avh4$elm_color$Color$green, 32))) : A2(
-			$mdgriffith$elm_ui$Element$el,
-			_List_Nil,
-			$mdgriffith$elm_ui$Element$html(
-				A2($danmarcab$material_icons$Material$Icons$Toggle$radio_button_unchecked, $avh4$elm_color$Color$darkGray, 32)));
-	};
-	var getRef = function (ort) {
-		var _v2 = A2($elm$core$Dict$get, ort, model.locations);
-		if (_v2.$ === 'Just') {
-			var pos = _v2.a;
-			return _Utils_Tuple2(ort, pos);
-		} else {
-			return $author$project$Model$winti;
-		}
-	};
-	var getRow = function (_v1) {
-		var ort = _v1.a;
-		var pos = _v1.b;
-		return A2(
-			$mdgriffith$elm_ui$Element$row,
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-					$mdgriffith$elm_ui$Element$spacing(20),
-					$mdgriffith$elm_ui$Element$Events$onClick(
-					$author$project$Model$ChangeRefLocation(
-						getRef(ort)))
-				]),
-			_List_fromArray(
-				[
-					A2(
-					$mdgriffith$elm_ui$Element$el,
-					_List_fromArray(
-						[
-							$mdgriffith$elm_ui$Element$width(
-							$mdgriffith$elm_ui$Element$px(30))
-						]),
-					selected(ort)),
-					A2(
-					$mdgriffith$elm_ui$Element$el,
-					_List_Nil,
-					$mdgriffith$elm_ui$Element$text(ort))
-				]));
-	};
-	var buildRows = A2(
-		$elm$core$List$map,
-		function (_v0) {
-			var ort = _v0.a;
-			var pos = _v0.b;
-			return getRow(
-				_Utils_Tuple2(ort, pos));
+var $author$project$Model$winti = _Utils_Tuple2(
+	'2Winterthur',
+	{altitude: 475.2, east: 2699109, fix: true, imgUrl: './img/Winterthur.jpg', latitude: 47.507765, longitude: 8.7542368, mdDescription: 'Weitere Web-Applikationen auf der [landing page](https://szinggeler.github.io/ "landing page")', north: 1262721, refId: '2Winterthur', title: 'Test-Kontrollpunkt für mobile Geräte beim Schleifstein... ;-)'});
+var $author$project$Views$Settings$showReferceLocations = F2(
+	function (model, listRefs) {
+		var showEditButtons = function (ort) {
+			return A2(
+				$mdgriffith$elm_ui$Element$row,
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$alignRight,
+						$mdgriffith$elm_ui$Element$spacing(5)
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$mdgriffith$elm_ui$Element$el,
+						_Utils_ap(
+							$author$project$Views$Styles$iconButtonStyle,
+							_List_fromArray(
+								[
+									$mdgriffith$elm_ui$Element$Events$onClick(
+									$author$project$Model$RefLocationEdit(ort)),
+									A2($mdgriffith$elm_ui$Element$paddingXY, 5, 5),
+									$mdgriffith$elm_ui$Element$spacing(10)
+								])),
+						$mdgriffith$elm_ui$Element$html(
+							A2(
+								$danmarcab$material_icons$Material$Icons$Editor$mode_edit,
+								$avh4$elm_color$Color$lightBlue,
+								$author$project$Views$Styles$scaled(5)))),
+						A2(
+						$mdgriffith$elm_ui$Element$el,
+						_Utils_ap(
+							$author$project$Views$Styles$iconButtonStyle,
+							_List_fromArray(
+								[
+									$mdgriffith$elm_ui$Element$Events$onClick(
+									$author$project$Model$RefLocationDelete(ort)),
+									A2($mdgriffith$elm_ui$Element$paddingXY, 5, 5),
+									$mdgriffith$elm_ui$Element$spacing(10)
+								])),
+						$mdgriffith$elm_ui$Element$html(
+							A2(
+								$danmarcab$material_icons$Material$Icons$Action$delete,
+								$avh4$elm_color$Color$lightBlue,
+								$author$project$Views$Styles$scaled(5))))
+					]));
+		};
+		var selected = function (ort) {
+			return _Utils_eq(ort, model.refLocation.a) ? A2(
+				$mdgriffith$elm_ui$Element$el,
+				_List_Nil,
+				$mdgriffith$elm_ui$Element$html(
+					A2($danmarcab$material_icons$Material$Icons$Action$check_circle, $avh4$elm_color$Color$green, 32))) : A2(
+				$mdgriffith$elm_ui$Element$el,
+				_List_Nil,
+				$mdgriffith$elm_ui$Element$html(
+					A2($danmarcab$material_icons$Material$Icons$Toggle$radio_button_unchecked, $avh4$elm_color$Color$darkGray, 32)));
+		};
+		var getRef = function (ort) {
+			var _v2 = A2($elm$core$Dict$get, ort, model.locations);
+			if (_v2.$ === 'Just') {
+				var pos = _v2.a;
+				return _Utils_Tuple2(ort, pos);
+			} else {
+				return $author$project$Model$winti;
+			}
+		};
+		var getRow = function (_v1) {
+			var ort = _v1.a;
+			var pos = _v1.b;
+			return A2(
+				$mdgriffith$elm_ui$Element$row,
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+						$mdgriffith$elm_ui$Element$spacing(10)
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$mdgriffith$elm_ui$Element$row,
+						_List_fromArray(
+							[
+								$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+								$mdgriffith$elm_ui$Element$spacing(20),
+								$mdgriffith$elm_ui$Element$Font$size(
+								$author$project$Views$Styles$scaled(3)),
+								$mdgriffith$elm_ui$Element$Events$onClick(
+								$author$project$Model$ChangeRefLocation(
+									getRef(ort))),
+								$mdgriffith$elm_ui$Element$mouseOver(
+								_List_fromArray(
+									[
+										$mdgriffith$elm_ui$Element$Background$color($author$project$Views$Styles$darkDarkGray)
+									])),
+								$mdgriffith$elm_ui$Element$pointer
+							]),
+						_List_fromArray(
+							[
+								A2(
+								$mdgriffith$elm_ui$Element$el,
+								_List_fromArray(
+									[
+										$mdgriffith$elm_ui$Element$width(
+										$mdgriffith$elm_ui$Element$px(30))
+									]),
+								selected(ort)),
+								A2(
+								$mdgriffith$elm_ui$Element$paragraph,
+								_List_Nil,
+								_List_fromArray(
+									[
+										$mdgriffith$elm_ui$Element$text(pos.title)
+									]))
+							])),
+						pos.fix ? $mdgriffith$elm_ui$Element$none : showEditButtons(ort)
+					]));
+		};
+		var buildRows = A2(
+			$elm$core$List$map,
+			function (_v0) {
+				var ort = _v0.a;
+				var pos = _v0.b;
+				return getRow(
+					_Utils_Tuple2(ort, pos));
+			},
+			listRefs);
+		return A2($mdgriffith$elm_ui$Element$column, $author$project$Views$Styles$optionStyle, buildRows);
+	});
+var $author$project$Views$Settings$showRefSelection = function (model) {
+	var ownRefs = A2(
+		$elm$core$List$filter,
+		function (_v1) {
+			var pos = _v1.b;
+			return !pos.fix;
 		},
 		$elm$core$Dict$toList(model.locations));
-	return A2($mdgriffith$elm_ui$Element$column, $author$project$Views$Styles$optionStyle, buildRows);
-};
-var $author$project$Views$Settings$showSettings = function (model) {
-	var chooseRef = model.settings.checkDistance ? _List_fromArray(
-		[
-			$author$project$Views$Helpers$sectionTitle('Referenzpunkt wählen'),
-			$author$project$Views$Settings$showReferceLocations(model)
-		]) : _List_Nil;
-	return _Utils_ap(
-		_List_fromArray(
-			[
-				$author$project$Views$Helpers$sectionTitle('Referenzpunkt zeigen'),
-				$author$project$Views$Settings$showDistance(model.settings.checkDistance)
-			]),
-		chooseRef);
-};
-var $mdgriffith$elm_ui$Element$Font$underline = $mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.underline);
-var $author$project$View$getViewContent = function (model) {
-	var refPos = model.refLocation.b;
-	var refName = model.refLocation.a;
+	var fixRefs = A2(
+		$elm$core$List$filter,
+		function (_v0) {
+			var pos = _v0.b;
+			return pos.fix;
+		},
+		$elm$core$Dict$toList(model.locations));
 	return A2(
 		$mdgriffith$elm_ui$Element$column,
 		_List_fromArray(
 			[
 				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-				$mdgriffith$elm_ui$Element$Background$color($author$project$Views$Styles$contentBgColor)
+				$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill)
+			]),
+		_List_fromArray(
+			[
+				$author$project$Views$Helpers$sectionTitle('Referenzpunkt wählen'),
+				A2(
+				$mdgriffith$elm_ui$Element$column,
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+						$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
+						$mdgriffith$elm_ui$Element$scrollbarY
+					]),
+				_List_fromArray(
+					[
+						A2($author$project$Views$Settings$showReferceLocations, model, fixRefs),
+						A2(
+						$mdgriffith$elm_ui$Element$el,
+						_List_fromArray(
+							[
+								$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+								$mdgriffith$elm_ui$Element$height(
+								$mdgriffith$elm_ui$Element$px(10)),
+								$mdgriffith$elm_ui$Element$Border$widthEach(
+								{bottom: 1, left: 0, right: 0, top: 0}),
+								$mdgriffith$elm_ui$Element$Border$solid,
+								$mdgriffith$elm_ui$Element$Border$color(
+								A3($mdgriffith$elm_ui$Element$rgb255, 70, 70, 70))
+							]),
+						$mdgriffith$elm_ui$Element$text('')),
+						A2($author$project$Views$Settings$showReferceLocations, model, ownRefs)
+					]))
+			]));
+};
+var $author$project$Views$Settings$showEditReference = function (model) {
+	var editMode = (model.refId === '') ? 'hinzufügen' : 'bearbeiten';
+	return A2(
+		$mdgriffith$elm_ui$Element$column,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill)
+			]),
+		model.settings.addingReference ? _List_fromArray(
+			[
+				$author$project$Views$Helpers$sectionTitle('Referenzpunkt ' + editMode),
+				$author$project$Views$Settings$showAddReferceForm(model)
+			]) : _List_fromArray(
+			[
+				$author$project$Views$Helpers$sectionTitle('Referenzpunkt hinzufügen'),
+				A2(
+				$mdgriffith$elm_ui$Element$el,
+				_List_fromArray(
+					[
+						A2($mdgriffith$elm_ui$Element$paddingXY, 15, 15)
+					]),
+				A3($author$project$Views$Settings$showRefAddButton, $danmarcab$material_icons$Material$Icons$Maps$add_location, 'Referenzpunkt hinzufügen', $author$project$Model$ToggleAddReference)),
+				$author$project$Views$Settings$showRefSelection(model),
+				$author$project$Views$Settings$showImportExport,
+				A2(
+				$mdgriffith$elm_ui$Element$row,
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$mdgriffith$elm_ui$Element$el,
+						_List_fromArray(
+							[
+								A2($mdgriffith$elm_ui$Element$paddingXY, 15, 15)
+							]),
+						A3($author$project$Views$Settings$showRefAddButton, $danmarcab$material_icons$Material$Icons$File$file_upload, 'Export', $author$project$Model$ExportReferences)),
+						A2(
+						$mdgriffith$elm_ui$Element$el,
+						_List_fromArray(
+							[
+								A2($mdgriffith$elm_ui$Element$paddingXY, 15, 15)
+							]),
+						A3($author$project$Views$Settings$showRefAddButton, $danmarcab$material_icons$Material$Icons$File$file_download, 'Import', $author$project$Model$ImportRequested))
+					]))
+			]));
+};
+var $author$project$Views$Settings$showSettings = function (model) {
+	return A2(
+		$mdgriffith$elm_ui$Element$column,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$spacing(15)
+			]),
+		_List_fromArray(
+			[
+				$author$project$Views$Helpers$sectionTitle('Referenzpunkt zeigen'),
+				$author$project$Views$Settings$showDistance(model.settings.checkDistance),
+				model.settings.checkDistance ? $author$project$Views$Settings$showEditReference(model) : $mdgriffith$elm_ui$Element$none
+			]));
+};
+var $elm_explorations$markdown$Markdown$defaultOptions = {
+	defaultHighlighting: $elm$core$Maybe$Nothing,
+	githubFlavored: $elm$core$Maybe$Just(
+		{breaks: false, tables: false}),
+	sanitize: true,
+	smartypants: false
+};
+var $elm$core$Maybe$isJust = function (maybe) {
+	if (maybe.$ === 'Just') {
+		return true;
+	} else {
+		return false;
+	}
+};
+var $elm_explorations$markdown$Markdown$toHtmlWith = _Markdown_toHtml;
+var $elm_explorations$markdown$Markdown$toHtml = $elm_explorations$markdown$Markdown$toHtmlWith($elm_explorations$markdown$Markdown$defaultOptions);
+var $author$project$View$getViewContent = function (model) {
+	var refPos = model.refLocation.b;
+	var refName = model.refLocation.a;
+	var imgUrl = $elm$core$String$isEmpty(refPos.imgUrl) ? $author$project$Views$Helpers$imgUrlFromWms(
+		_Utils_Tuple2(refPos.east, refPos.north)) : refPos.imgUrl;
+	var content = A2(
+		$elm_explorations$markdown$Markdown$toHtml,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('mddescription')
+			]),
+		refPos.mdDescription);
+	return A2(
+		$mdgriffith$elm_ui$Element$column,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$Background$color($author$project$Views$Styles$contentBgColor),
+				$mdgriffith$elm_ui$Element$Border$color($author$project$Views$Styles$darkGray),
+				$mdgriffith$elm_ui$Element$Border$widthEach(
+				{bottom: 1, left: 1, right: 1, top: 0})
 			]),
 		function () {
 			var _v0 = model.activePage;
@@ -19274,15 +21204,7 @@ var $author$project$View$getViewContent = function (model) {
 								]),
 							_List_fromArray(
 								[
-									$mdgriffith$elm_ui$Element$text(refPos.description),
-									A2(
-									$mdgriffith$elm_ui$Element$link,
-									_List_fromArray(
-										[$mdgriffith$elm_ui$Element$pointer, $mdgriffith$elm_ui$Element$Font$underline]),
-									{
-										label: $mdgriffith$elm_ui$Element$text(refPos.linkLabel),
-										url: refPos.linkUrl
-									})
+									$mdgriffith$elm_ui$Element$html(content)
 								])),
 							A2(
 							$mdgriffith$elm_ui$Element$image,
@@ -19290,12 +21212,15 @@ var $author$project$View$getViewContent = function (model) {
 								[
 									$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
 								]),
-							{description: refPos.linkDescription, src: './img/' + (refName + '.jpg')})
+							{description: 'Bild' + (' des Referenz-Punktes ' + refName), src: imgUrl})
 						]);
 				case 'MeasurePage':
 					return $author$project$Views$Measurements$showMeasurements(model);
 				default:
-					return $author$project$Views$Settings$showSettings(model);
+					return _List_fromArray(
+						[
+							$author$project$Views$Settings$showSettings(model)
+						]);
 			}
 		}());
 };
@@ -19506,22 +21431,9 @@ var $mdgriffith$elm_ui$Element$layoutWith = F3(
 			child);
 	});
 var $author$project$Views$Styles$myFocusStyle = {
-	backgroundColor: $elm$core$Maybe$Just($author$project$Views$Styles$lightGray),
+	backgroundColor: $elm$core$Maybe$Just($author$project$Views$Styles$white),
 	borderColor: $elm$core$Maybe$Just($author$project$Views$Styles$lightGray),
 	shadow: $elm$core$Maybe$Nothing
-};
-var $mdgriffith$elm_ui$Element$padding = function (x) {
-	var f = x;
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$padding,
-		A5(
-			$mdgriffith$elm_ui$Internal$Model$PaddingStyle,
-			'p-' + $elm$core$String$fromInt(x),
-			f,
-			f,
-			f,
-			f));
 };
 var $mdgriffith$elm_ui$Element$Font$sansSerif = $mdgriffith$elm_ui$Internal$Model$SansSerif;
 var $author$project$Model$SettingsPage = {$: 'SettingsPage'};
@@ -20241,31 +22153,9 @@ var $author$project$View$logo = function (width) {
 var $author$project$Model$ToggleMenu = function (a) {
 	return {$: 'ToggleMenu', a: a};
 };
-var $mdgriffith$elm_ui$Internal$Model$Right = {$: 'Right'};
-var $mdgriffith$elm_ui$Element$alignRight = $mdgriffith$elm_ui$Internal$Model$AlignX($mdgriffith$elm_ui$Internal$Model$Right);
-var $author$project$Views$Styles$darkDarkGray = A3($mdgriffith$elm_ui$Element$rgb255, 75, 75, 75);
 var $mdgriffith$elm_ui$Internal$Model$Below = {$: 'Below'};
-var $mdgriffith$elm_ui$Element$createNearby = F2(
-	function (loc, element) {
-		if (element.$ === 'Empty') {
-			return $mdgriffith$elm_ui$Internal$Model$NoAttribute;
-		} else {
-			return A2($mdgriffith$elm_ui$Internal$Model$Nearby, loc, element);
-		}
-	});
 var $mdgriffith$elm_ui$Element$below = function (element) {
 	return A2($mdgriffith$elm_ui$Element$createNearby, $mdgriffith$elm_ui$Internal$Model$Below, element);
-};
-var $mdgriffith$elm_ui$Internal$Model$Hover = {$: 'Hover'};
-var $mdgriffith$elm_ui$Internal$Flag$hover = $mdgriffith$elm_ui$Internal$Flag$flag(33);
-var $mdgriffith$elm_ui$Element$mouseOver = function (decs) {
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$hover,
-		A2(
-			$mdgriffith$elm_ui$Internal$Model$PseudoSelector,
-			$mdgriffith$elm_ui$Internal$Model$Hover,
-			$mdgriffith$elm_ui$Internal$Model$unwrapDecorations(decs)));
 };
 var $author$project$View$menuItem = function (menuText) {
 	return A2(
@@ -20299,7 +22189,6 @@ var $author$project$View$menuItem = function (menuText) {
 					]))
 			]));
 };
-var $mdgriffith$elm_ui$Element$none = $mdgriffith$elm_ui$Internal$Model$Empty;
 var $author$project$View$dropdownMenu = function (shortMenu) {
 	return shortMenu ? $mdgriffith$elm_ui$Element$below(
 		A2(
@@ -20376,6 +22265,7 @@ var $author$project$View$menuMore = function (model) {
 			$mdgriffith$elm_ui$Element$html(
 				A2($danmarcab$material_icons$Material$Icons$Navigation$menu, $author$project$Views$Styles$grey, 32))));
 };
+var $elm$html$Html$Attributes$rel = _VirtualDom_attribute('rel');
 var $elm$html$Html$Attributes$target = $elm$html$Html$Attributes$stringProperty('target');
 var $mdgriffith$elm_ui$Element$newTabLink = F2(
 	function (attrs, _v0) {
@@ -20411,11 +22301,6 @@ var $mdgriffith$elm_ui$Element$newTabLink = F2(
 				_List_fromArray(
 					[label])));
 	});
-var $mdgriffith$elm_ui$Internal$Model$Transparency = F2(
-	function (a, b) {
-		return {$: 'Transparency', a: a, b: b};
-	});
-var $mdgriffith$elm_ui$Internal$Flag$transparency = $mdgriffith$elm_ui$Internal$Flag$flag(0);
 var $mdgriffith$elm_ui$Element$transparent = function (on) {
 	return on ? A2(
 		$mdgriffith$elm_ui$Internal$Model$StyleClass,
@@ -20425,7 +22310,6 @@ var $mdgriffith$elm_ui$Element$transparent = function (on) {
 		$mdgriffith$elm_ui$Internal$Flag$transparency,
 		A2($mdgriffith$elm_ui$Internal$Model$Transparency, 'visible', 0.0));
 };
-var $author$project$Views$Styles$white = A3($mdgriffith$elm_ui$Element$rgb255, 255, 255, 255);
 var $author$project$View$headerLarge = function (model) {
 	return A2(
 		$mdgriffith$elm_ui$Element$row,
@@ -20469,7 +22353,7 @@ var $author$project$View$headerLarge = function (model) {
 						$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
 						$mdgriffith$elm_ui$Element$Font$center,
 						$mdgriffith$elm_ui$Element$Font$size(
-						$author$project$Views$Styles$scaled(5)),
+						$author$project$Views$Styles$scaled(4)),
 						$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$white)
 					]),
 				$mdgriffith$elm_ui$Element$text('LocateMe')),
@@ -20714,7 +22598,6 @@ var $author$project$View$showHeader = function (model) {
 					]))
 			]));
 };
-var $mdgriffith$elm_ui$Element$htmlAttribute = $mdgriffith$elm_ui$Internal$Model$Attr;
 var $author$project$Views$Styles$unselectable = function () {
 	var theStyles = _List_fromArray(
 		['-webkit-touch-callout', '-webkit-user-select', '-khtml-user-select', '-moz-user-select', '-ms-user-select', 'user-select']);
@@ -20739,7 +22622,7 @@ var $author$project$View$view = function (model) {
 			[
 				$mdgriffith$elm_ui$Element$Background$color($author$project$Views$Styles$backgroundColor),
 				$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$white),
-				$mdgriffith$elm_ui$Element$Font$size(14),
+				$mdgriffith$elm_ui$Element$Font$size(16),
 				$mdgriffith$elm_ui$Element$Font$family(
 				_List_fromArray(
 					[
@@ -20768,4 +22651,4 @@ var $author$project$View$view = function (model) {
 };
 var $author$project$Main$main = $elm$browser$Browser$element(
 	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$View$view});
-_Platform_export({'Main':{'init':$author$project$Main$main($elm$json$Json$Decode$value)({"versions":{"elm":"0.19.1"},"types":{"message":"Model.Msg","aliases":{"Model.Position":{"args":[],"type":"{ latitude : Basics.Float, longitude : Basics.Float, altitude : Basics.Float, east : Basics.Float, north : Basics.Float, title : String.String, description : String.String, linkUrl : String.String, linkLabel : String.String, linkDescription : String.String }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Model.Msg":{"args":[],"tags":{"GetTimeZone":["Time.Zone"],"WindowSizeUpdated":["Basics.Int","Basics.Int"],"LocationChange":["Json.Decode.Value"],"LocationError":["Json.Decode.Value"],"WatchGeolocation":["Json.Decode.Value"],"ChangeRefLocation":["( String.String, Model.Position )"],"ShowPage":["Model.Page"],"SetGeoLocState":["Model.GeoLocState"],"ToggleShowDistance":[],"ToggleShowDiagram":[],"ToggleMenu":["Basics.Bool"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Basics.Float":{"args":[],"tags":{"Float":[]}},"Model.GeoLocState":{"args":[],"tags":{"Track":[],"Pause":[],"Reset":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Model.Page":{"args":[],"tags":{"AboutPage":[],"MeasurePage":[],"SettingsPage":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"List.List":{"args":["a"],"tags":{}}}}})}});}(this));
+_Platform_export({'Main':{'init':$author$project$Main$main($elm$json$Json$Decode$value)({"versions":{"elm":"0.19.1"},"types":{"message":"Model.Msg","aliases":{"Model.Position":{"args":[],"type":"{ refId : String.String, latitude : Basics.Float, longitude : Basics.Float, altitude : Basics.Float, east : Basics.Float, north : Basics.Float, title : String.String, mdDescription : String.String, imgUrl : String.String, fix : Basics.Bool }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Model.Msg":{"args":[],"tags":{"GetTimeZone":["Time.Zone"],"WindowSizeUpdated":["Basics.Int","Basics.Int"],"LocationChange":["Json.Decode.Value"],"LocationError":["Json.Decode.Value"],"WatchGeolocation":["Json.Decode.Value"],"ChangeRefLocation":["( String.String, Model.Position )"],"ShowPage":["Model.Page"],"SetGeoLocState":["Model.GeoLocState"],"ToggleShowDistance":[],"ToggleShowDiagram":[],"ToggleMenu":["Basics.Bool"],"ToggleAddReference":[],"RefEastChanged":["String.String"],"RefNorthChanged":["String.String"],"RefTitleChanged":["String.String"],"RefImgSrcChanged":["String.String"],"RefDescriptionChanged":["String.String"],"RefLocationSave":[],"RefLocationDelete":["String.String"],"RefLocationEdit":["String.String"],"ExportReferences":[],"ImportRequested":[],"ImportSelected":["File.File"],"ImportLoaded":["String.String"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"File.File":{"args":[],"tags":{"File":[]}},"Basics.Float":{"args":[],"tags":{"Float":[]}},"Model.GeoLocState":{"args":[],"tags":{"Track":[],"Pause":[],"Reset":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Model.Page":{"args":[],"tags":{"AboutPage":[],"MeasurePage":[],"SettingsPage":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"List.List":{"args":["a"],"tags":{}}}}})}});}(this));

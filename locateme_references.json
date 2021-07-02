@@ -1,0 +1,38 @@
+[
+    {
+        "refId": "Girsberg",
+        "latitude": 47.5,
+        "longitude": 8.5,
+        "altitude": 500,
+        "east": 2700000,
+        "north": 1277777,
+        "title": "Girsberg",
+        "mdDescription": "# Test Titel\n## Subtitel\nDies ist text **fett** und hier *italique* oder __*auch fett*__ etc.",
+        "imgUrl": "",
+        "fix": false
+    },
+    {
+        "refId": "1Landesmuseum",
+        "latitude": 47.378631,
+        "longitude": 8.541108,
+        "altitude": 408.36,
+        "east": 2683256.46,
+        "north": 1248117.48,
+        "title": "Landesmuseum",
+        "mdDescription": "## Kontrollpunkt für mobile Geräte beim Landesmuseum\nWeitere Informationen finden Sie unter [Kontrollpunkt Landesmuseum](https://www.zh.ch/de/planen-bauen/geoinformation/geodaten/koordinatensystem.html#273464403 \"Infos zu Kontrollpunkt\")",
+        "imgUrl": "./img/Landesmuseum.jpg",
+        "fix": true
+    },
+    {
+        "refId": "2Winterthur",
+        "latitude": 47.507765,
+        "longitude": 8.7542368,
+        "altitude": 475.2,
+        "east": 2699109,
+        "north": 1262721,
+        "title": "Winterthur",
+        "mdDescription": "## Test-Kontrollpunkt\nfür mobile Geräte beim Schleifstein...\n # ;-)\nWeitere Web-Applikationen auf der [landing page](https://szinggeler.github.io/ \"landing page\")",
+        "imgUrl": "./img/Winterthur.jpg",
+        "fix": true
+    }
+]
