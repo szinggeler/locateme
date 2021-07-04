@@ -3,7 +3,7 @@
     "short_name": "LocateMe",
     "description": "Die Webapplikation verwendet die Geolocation API zur Bestimmung der aktuellen Position (CH-LV95 und WGS84), Distanz zu einem Referenzpunkt, Genauigkeitsangabe des Gerätes sowie Geschwindigkeit und Richtung. Die gemessenen Positionswerte werden in einem kleinen Kartenfenster dargestellt.",
     "lang": "de-DE",
-    "start_url": "https://szinggeler.github.io/geoTangle/geotangle.html",
+    "start_url": "https://szinggeler.github.io/locateme/locateme19.html",
     "display": "standalone",
     "orientation": "any",
     "theme_color": "#202020",
