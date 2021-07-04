@@ -12147,7 +12147,7 @@ var $author$project$Main$update = F2(
 			case 'RefLocationSave':
 				var activeRefId = (model.refId === '') ? model.refTitle : model.refId;
 				var newPosition = {altitude: 500, east: model.refEast, fix: false, imgUrl: model.refImgSrc, latitude: 47.5, longitude: 8.5, mdDescription: model.refMdDescription, north: model.refNorth, refId: activeRefId, title: model.refTitle};
-				var newLocations = ((model.refId === 'Landesmuseum') || (model.refId === 'Winterthur')) ? model.locations : A3($elm$core$Dict$insert, activeRefId, newPosition, model.locations);
+				var newLocations = ((model.refId === '1Landesmuseum') || (model.refId === '1Winterthur')) ? model.locations : A3($elm$core$Dict$insert, activeRefId, newPosition, model.locations);
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,

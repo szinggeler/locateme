@@ -15,6 +15,9 @@
             width: 100%;
             background: #ccc;
         }
+        a {
+        color: rgb(179, 182, 175);
+        }
     </style>
     <script type="text/javascript" src="./lib/ol-4-6-5.js"></script>
     <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
@@ -26,8 +29,7 @@
     <script type="text/javascript" src="./src/GeotoolsOlPortLocateme.js"></script>
     <script type="text/javascript" src="./src/GeolocationLocateme.js"></script>
     <script type="text/javascript" src="./build/locateme.min.js"></script>
-    <!-- <script type="text/javascript" src="./build/locateme.min.js"></script> -->
-    <!-- <script type="text/javascript" src="./build/locateme.debug.js"></script> -->
+
 </head>
 <body style="background: rgb(46, 52, 54);">
     <div id="elm"></div>
@@ -42,6 +44,15 @@
 
         Geolocation_port_init(app);
         Geotools_port_init(app);
+    </script>
+    <script>
+        // Check that service workers are supported
+        if ('serviceWorker' in navigator) {
+            //Use the window load event to keep the page load performant
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js');
+            });
+        }
     </script>
 </body>
 </html>

@@ -7462,7 +7462,7 @@ var $author$project$Main$update = F2(
 			case 17:
 				var activeRefId = (model.dO === '') ? model.P : model.dO;
 				var newPosition = {cr: 500, cZ: model.Y, c2: false, dd: model.Z, $7: 47.5, dq: 8.5, ds: model._, dB: model.aa, dO: activeRefId, er: model.P};
-				var newLocations = ((model.dO === 'Landesmuseum') || (model.dO === 'Winterthur')) ? model.y : A3($elm$core$Dict$insert, activeRefId, newPosition, model.y);
+				var newLocations = ((model.dO === '1Landesmuseum') || (model.dO === '1Winterthur')) ? model.y : A3($elm$core$Dict$insert, activeRefId, newPosition, model.y);
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
