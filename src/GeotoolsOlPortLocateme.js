@@ -7,6 +7,16 @@ function Geotools_port_init(elmApp){
             DSOlMap.setConfig(mapconfig, elmApp);
         });
     });
+
+    elmApp.ports.storeRefsInCache.subscribe(function (data) {
+        localStorage.setItem('cacheRefs', JSON.stringify (data));
+    });
+
+    // send initial orders from cache if available
+    if (localStorage.getItem('cacheRefs')) {
+        elmApp.ports.getRefsFromCache.send(JSON.parse(localStorage.getItem('cacheRefs')));
+    }
+
 /*
 // receive something from Elm
     elmApp.ports.setOlAction.subscribe(function (strAction) {
@@ -20,7 +30,19 @@ function Geotools_port_init(elmApp){
         }
     });
 */
-}
+};
+
+proj4.defs(
+	"EPSG:2056",
+	"+proj=somerc +lat_0=46.95240555555556 +lon_0=7.439583333333333 +k_0=1 +x_0=2600000 +y_0=1200000 +ellps=bessel +towgs84=674.374,15.056,405.346,0,0,0,0 +units=m +no_defs"
+);
+
+proj4.defs(
+	"EPSG:21781",
+	"+proj=somerc +lat_0=46.95240555555556 +lon_0=7.439583333333333 +k_0=1 +x_0=600000 +y_0=200000 +ellps=bessel +towgs84=674.4,15.1,405.3,0,0,0,0 +units=m +no_defs"
+);
+
+ol.proj.proj4.register(proj4);
 
 var DSOlMap = {
 	elmApp: null,
@@ -30,6 +52,8 @@ var DSOlMap = {
 	view : null,
 	featureLayer : null,
 	featureSource : null,
+	lkTileLayer : null,
+	zhWmsLayer : null,
 
 	refStyle: function () {
 		var style = new ol.style.Style({
@@ -167,8 +191,6 @@ var DSOlMap = {
 	},
 
 
-
-
 	buildUpLayer: function () {
 		return new ol.layer.Image({
 			source: new ol.source.ImageWMS({
@@ -197,7 +219,14 @@ var DSOlMap = {
         });
 	},
 
-
+	backgroundLayer: function () {
+		return new ol.layer.Tile({
+			id: "background-layer",
+			source: new ol.source.XYZ({
+				url: "https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg"
+			})
+		});
+	},
 
 	setupMap: function (mapconfig, elmApp) {
 		DSOlMap.elmApp = elmApp;
@@ -208,10 +237,48 @@ var DSOlMap = {
 	    });
 		DSOlMap.view = new ol.View({
 	        center: mapconfig.center, // [2701726.2240732517, 1264358.9709083273],
-	        projection: DSOlMap.projection,
+	        projection:  DSOlMap.projection, // "EPSG:2056"
 	        zoom: mapconfig.zoom //18
 	    });
 		DSOlMap.view.on('change', function(e) {
+			actExtent = e.target.calculateExtent(DSOlMap.map.getSize());
+			// nur sichtbar, wenn aktueller Ausschnitt nicht vollständig in ÜP-Bereich 
+			lkVisible = false; 
+			if (actExtent[0] < 2654500 ||
+				actExtent[1] < 1222400 ||
+				actExtent[2] > 2720000 ||
+				actExtent[3] > 1300000
+				) {
+				lkVisible = true;
+			} else {
+				lkVisible = false;
+			}
+			
+			// nur sichtbar, wenn aktueller Ausschnitt ÜP-Bereich anschneidet
+			upVisible = false;
+			if ((actExtent[0] < 2720000 && (actExtent[1] < 1300000 || actExtent[3] > 1222400)) ||
+				(actExtent[1] < 1300000 && (actExtent[0] < 2720000 || actExtent[2] > 2654500)) ||
+				(actExtent[2] > 2654500 && (actExtent[1] < 1300000 || actExtent[3] > 1222400)) ||
+				(actExtent[3] > 1222400 && (actExtent[0] < 2720000 || actExtent[2] > 2654500))
+				) {
+				upVisible = true;
+			} else {
+				upVisible = false;
+			}
+
+			if  (DSOlMap.map.getView().getZoom() > 17) {
+				DSOlMap.lkTileLayer.setVisible(lkVisible);
+				DSOlMap.zhWmsLayer.setVisible(upVisible);
+			} else {
+				if (DSOlMap.map.getView().getZoom() >= 19) {
+					DSOlMap.lkTileLayer.setVisible(false);
+				} else {
+					DSOlMap.lkTileLayer.setVisible(true);
+				}
+				DSOlMap.zhWmsLayer.setVisible(false);
+			}
+
+			// Extent UPZH: 2654500 1222400 2720000 1300000
 /*
 	        DSOlMap.mapconfig.center = e.target.getCenter();
 	        DSOlMap.mapconfig.extent = e.target.calculateExtent(DSOlMap.map.getSize());
@@ -228,16 +295,20 @@ var DSOlMap = {
 	        //style: DSOlMap.measureStyle
 	    });
 
-
+		DSOlMap.lkTileLayer = DSOlMap.backgroundLayer();
+		DSOlMap.zhWmsLayer = DSOlMap.buildUpLayer();
+		
 
 	  	// create map
 		DSOlMap.map = new ol.Map({
 	        // target: 'myOlMap',
 	        controls: ol.control.defaults().extend([
-	          new ol.control.ScaleLine()
+	          new ol.control.ScaleLine({
+				units: "metric"
+			  })
 	        ]),
 	        // layers: [DSOlMap.buildLkLayer(),  DSOlMap.featureLayer],
-	        layers: [DSOlMap.buildUpLayer(), DSOlMap.featureLayer],
+	        layers: [DSOlMap.lkTileLayer, DSOlMap.zhWmsLayer, DSOlMap.featureLayer],
 	        view: DSOlMap.view
 	    });
 	    DSOlMap.map.setTarget(document.getElementById('myOlMap'));

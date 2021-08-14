@@ -11030,9 +11030,6 @@ var $author$project$Model$iniModel = function (flags) {
 			$author$project$Model$iniWinSize(flags)),
 		error: '',
 		geoLocState: $author$project$Model$Pause,
-		locations: $elm$core$Dict$fromList(
-			_List_fromArray(
-				[$author$project$Model$platzspitz])),
 		meanPosition: $author$project$Model$iniMeanPosition,
 		meanPositions: _List_Nil,
 		measurements: _List_Nil,
@@ -11041,6 +11038,9 @@ var $author$project$Model$iniModel = function (flags) {
 		refId: '',
 		refImgSrc: '//www.suedkurier.de/storage/image/9/2/0/9/13079029_shift-966x593_1wmQuk_Z6S0G6.jpg',
 		refLocation: $author$project$Model$platzspitz,
+		refLocations: $elm$core$Dict$fromList(
+			_List_fromArray(
+				[$author$project$Model$platzspitz])),
 		refMdDescription: 'Dies ist ein **neuer** Ref-Punkt [landing page](https://szinggeler.github.io/ "landing page")',
 		refNorth: 1262721,
 		refTitle: 'Neuer Refpkt',
@@ -11063,6 +11063,9 @@ var $author$project$Model$LocationChange = function (a) {
 var $author$project$Model$LocationError = function (a) {
 	return {$: 'LocationError', a: a};
 };
+var $author$project$Model$RestoreRefsFromCache = function (a) {
+	return {$: 'RestoreRefsFromCache', a: a};
+};
 var $author$project$Model$WatchGeolocation = function (a) {
 	return {$: 'WatchGeolocation', a: a};
 };
@@ -11073,6 +11076,7 @@ var $author$project$Model$WindowSizeUpdated = F2(
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $author$project$Geolocation$changelocation = _Platform_incomingPort('changelocation', $elm$json$Json$Decode$value);
 var $author$project$Geolocation$errorlocation = _Platform_incomingPort('errorlocation', $elm$json$Json$Decode$value);
+var $author$project$PortOl$getRefsFromCache = _Platform_incomingPort('getRefsFromCache', $elm$json$Json$Decode$value);
 var $elm$browser$Browser$Events$Window = {$: 'Window'};
 var $elm$browser$Browser$Events$MySub = F3(
 	function (a, b, c) {
@@ -11267,7 +11271,8 @@ var $author$project$Main$subscriptions = function (model) {
 			$elm$browser$Browser$Events$onResize($author$project$Model$WindowSizeUpdated),
 			$author$project$Geolocation$changelocation($author$project$Model$LocationChange),
 			$author$project$Geolocation$errorlocation($author$project$Model$LocationError),
-			$author$project$Geolocation$watchid($author$project$Model$WatchGeolocation)
+			$author$project$Geolocation$watchid($author$project$Model$WatchGeolocation),
+			$author$project$PortOl$getRefsFromCache($author$project$Model$RestoreRefsFromCache)
 		]);
 	return $elm$core$Platform$Sub$batch(subWindow);
 };
@@ -11287,6 +11292,67 @@ var $author$project$Main$buildOlMapConfig = function (model) {
 	var mapConfig = {center: getCenter, checkDistance: checkDistance, measurements: model.measurements, refLocation: refLoc, zoom: 18};
 	return mapConfig;
 };
+var $elm$json$Json$Encode$bool = _Json_wrap;
+var $elm$json$Json$Encode$float = _Json_wrap;
+var $author$project$Data$encodedPosition = function (position) {
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'refId',
+				$elm$json$Json$Encode$string(position.refId)),
+				_Utils_Tuple2(
+				'latitude',
+				$elm$json$Json$Encode$float(position.latitude)),
+				_Utils_Tuple2(
+				'longitude',
+				$elm$json$Json$Encode$float(position.longitude)),
+				_Utils_Tuple2(
+				'altitude',
+				$elm$json$Json$Encode$float(position.altitude)),
+				_Utils_Tuple2(
+				'east',
+				$elm$json$Json$Encode$float(position.east)),
+				_Utils_Tuple2(
+				'north',
+				$elm$json$Json$Encode$float(position.north)),
+				_Utils_Tuple2(
+				'title',
+				$elm$json$Json$Encode$string(position.title)),
+				_Utils_Tuple2(
+				'mdDescription',
+				$elm$json$Json$Encode$string(position.mdDescription)),
+				_Utils_Tuple2(
+				'imgUrl',
+				$elm$json$Json$Encode$string(position.imgUrl)),
+				_Utils_Tuple2(
+				'fix',
+				$elm$json$Json$Encode$bool(position.fix))
+			]));
+};
+var $author$project$Data$encodedReferences = $elm$json$Json$Encode$list($author$project$Data$encodedPosition);
+var $author$project$Data$encodedRefs = F2(
+	function (refId, refLocations) {
+		return $elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'refSelected',
+					$elm$json$Json$Encode$string(refId)),
+					_Utils_Tuple2(
+					'refLocations',
+					$author$project$Data$encodedReferences(refLocations))
+				]));
+	});
+var $author$project$PortOl$storeRefsInCache = _Platform_outgoingPort('storeRefsInCache', $elm$core$Basics$identity);
+var $author$project$Main$buildStoreCacheCmd = F2(
+	function (refSelected, refLocations) {
+		return $author$project$PortOl$storeRefsInCache(
+			A2(
+				$author$project$Data$encodedRefs,
+				refSelected.a,
+				$elm$core$Dict$values(refLocations)));
+	});
 var $author$project$Geolocation$clearWatch = _Platform_outgoingPort('clearWatch', $elm$core$Basics$identity);
 var $author$project$Geolocation$JSGeoError = F2(
 	function (errcode, message) {
@@ -11343,45 +11409,6 @@ var $author$project$Geolocation$decodeWatchId = function (jsid) {
 		return 0;
 	}
 };
-var $elm$json$Json$Encode$bool = _Json_wrap;
-var $elm$json$Json$Encode$float = _Json_wrap;
-var $author$project$Data$encodedPosition = function (position) {
-	return $elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'refId',
-				$elm$json$Json$Encode$string(position.refId)),
-				_Utils_Tuple2(
-				'latitude',
-				$elm$json$Json$Encode$float(position.latitude)),
-				_Utils_Tuple2(
-				'longitude',
-				$elm$json$Json$Encode$float(position.longitude)),
-				_Utils_Tuple2(
-				'altitude',
-				$elm$json$Json$Encode$float(position.altitude)),
-				_Utils_Tuple2(
-				'east',
-				$elm$json$Json$Encode$float(position.east)),
-				_Utils_Tuple2(
-				'north',
-				$elm$json$Json$Encode$float(position.north)),
-				_Utils_Tuple2(
-				'title',
-				$elm$json$Json$Encode$string(position.title)),
-				_Utils_Tuple2(
-				'mdDescription',
-				$elm$json$Json$Encode$string(position.mdDescription)),
-				_Utils_Tuple2(
-				'imgUrl',
-				$elm$json$Json$Encode$string(position.imgUrl)),
-				_Utils_Tuple2(
-				'fix',
-				$elm$json$Json$Encode$bool(position.fix))
-			]));
-};
-var $author$project$Data$encodedReferences = $elm$json$Json$Encode$list($author$project$Data$encodedPosition);
 var $elm$time$Time$Posix = function (a) {
 	return {$: 'Posix', a: a};
 };
@@ -11712,6 +11739,10 @@ var $author$project$Main$getLocationModel = F2(
 			});
 	});
 var $elm$json$Json$Encode$int = _Json_wrap;
+var $author$project$Data$CachedRefs = F2(
+	function (refSelected, refLocations) {
+		return {refLocations: refLocations, refSelected: refSelected};
+	});
 var $author$project$Model$Position = function (refId) {
 	return function (latitude) {
 		return function (longitude) {
@@ -11754,6 +11785,11 @@ var $author$project$Data$positionDecoder = function () {
 		A2($elm$json$Json$Decode$field, 'fix', $elm$json$Json$Decode$bool));
 }();
 var $author$project$Data$refPositionDecoder = $elm$json$Json$Decode$list($author$project$Data$positionDecoder);
+var $author$project$Data$refCacheDecoder = A3(
+	$elm$json$Json$Decode$map2,
+	$author$project$Data$CachedRefs,
+	A2($elm$json$Json$Decode$field, 'refSelected', $elm$json$Json$Decode$string),
+	A2($elm$json$Json$Decode$field, 'refLocations', $author$project$Data$refPositionDecoder));
 var $elm$core$Maybe$destruct = F3(
 	function (_default, func, maybe) {
 		if (maybe.$ === 'Just') {
@@ -12006,7 +12042,11 @@ var $author$project$Main$update = F2(
 						_List_fromArray(
 							[
 								_Utils_eq(model.geoLocState, $author$project$Model$Track) ? $author$project$Geolocation$watch(_Utils_Tuple0) : $author$project$Geolocation$clearWatch(
-								$elm$json$Json$Encode$int(model.watchId))
+								$elm$json$Json$Encode$int(model.watchId)),
+								A2(
+								$author$project$Main$buildStoreCacheCmd,
+								_Utils_Tuple2(ort, position),
+								model.refLocations)
 							])));
 			case 'SetGeoLocState':
 				var newState = msg.a;
@@ -12147,38 +12187,41 @@ var $author$project$Main$update = F2(
 			case 'RefLocationSave':
 				var activeRefId = (model.refId === '') ? model.refTitle : model.refId;
 				var newPosition = {altitude: 500, east: model.refEast, fix: false, imgUrl: model.refImgSrc, latitude: 47.5, longitude: 8.5, mdDescription: model.refMdDescription, north: model.refNorth, refId: activeRefId, title: model.refTitle};
-				var newLocations = ((model.refId === '1Landesmuseum') || (model.refId === '1Winterthur')) ? model.locations : A3($elm$core$Dict$insert, activeRefId, newPosition, model.locations);
+				var newLocations = ((model.refId === '1Landesmuseum') || (model.refId === '1Winterthur')) ? model.refLocations : A3($elm$core$Dict$insert, activeRefId, newPosition, model.refLocations);
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
-							locations: newLocations,
 							refEast: 0,
 							refId: '',
 							refImgSrc: '',
 							refLocation: _Utils_Tuple2(activeRefId, newPosition),
+							refLocations: newLocations,
 							refMdDescription: '',
 							refNorth: 0,
 							refTitle: '',
 							settings: $author$project$Main$toggleAddReference(model.settings)
 						}),
-					$elm$core$Platform$Cmd$none);
+					A2(
+						$author$project$Main$buildStoreCacheCmd,
+						_Utils_Tuple2(activeRefId, newPosition),
+						newLocations));
 			case 'RefLocationDelete':
 				var refId = msg.a;
-				var refLocations = A2($elm$core$Dict$remove, refId, model.locations);
+				var refLocations = A2($elm$core$Dict$remove, refId, model.refLocations);
 				var refActive = _Utils_eq(refId, model.refLocation.a) ? $author$project$Model$platzspitz : model.refLocation;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{locations: refLocations, refLocation: refActive}),
-					$elm$core$Platform$Cmd$none);
+						{refLocation: refActive, refLocations: refLocations}),
+					A2($author$project$Main$buildStoreCacheCmd, refActive, refLocations));
 			case 'RefLocationEdit':
 				var refId = msg.a;
 				var newPosition = {altitude: 500, east: model.refEast, fix: false, imgUrl: model.refImgSrc, latitude: 47.5, longitude: 8.5, mdDescription: model.refMdDescription, north: model.refNorth, refId: refId, title: model.refTitle};
 				var refSelected = A2(
 					$elm$core$Maybe$withDefault,
 					newPosition,
-					A2($elm$core$Dict$get, refId, model.locations));
+					A2($elm$core$Dict$get, refId, model.refLocations));
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -12197,7 +12240,7 @@ var $author$project$Main$update = F2(
 					$elm$json$Json$Encode$encode,
 					4,
 					$author$project$Data$encodedReferences(
-						$elm$core$Dict$values(model.locations)));
+						$elm$core$Dict$values(model.refLocations)));
 				return _Utils_Tuple2(
 					model,
 					A3($elm$file$File$Download$string, 'locateme_references.json', 'application/json', refsString));
@@ -12217,13 +12260,12 @@ var $author$project$Main$update = F2(
 						$elm$core$Task$perform,
 						$author$project$Model$ImportLoaded,
 						$elm$file$File$toString(file)));
-			default:
+			case 'ImportLoaded':
 				var content = msg.a;
-				var newCmd = $elm$core$Platform$Cmd$none;
 				var decodeStoredRefPositions = A2($elm$json$Json$Decode$decodeString, $author$project$Data$refPositionDecoder, content);
 				var getStoredPositions = function () {
 					if (decodeStoredRefPositions.$ === 'Err') {
-						return $elm$core$Dict$values(model.locations);
+						return $elm$core$Dict$values(model.refLocations);
 					} else {
 						var refPositions = decodeStoredRefPositions.a;
 						return refPositions;
@@ -12238,6 +12280,13 @@ var $author$project$Main$update = F2(
 						getStoredPositions);
 					return $elm$core$Dict$fromList(kvPairs);
 				}();
+				var newCmd = function () {
+					if (decodeStoredRefPositions.$ === 'Ok') {
+						return A2($author$project$Main$buildStoreCacheCmd, model.refLocation, newLocations);
+					} else {
+						return $elm$core$Platform$Cmd$none;
+					}
+				}();
 				var newStatus = function () {
 					if (decodeStoredRefPositions.$ === 'Ok') {
 						return 'Referenzpunkte erfolgreich importiert';
@@ -12249,8 +12298,58 @@ var $author$project$Main$update = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{locations: newLocations}),
+						{refLocations: newLocations}),
 					newCmd);
+			default:
+				var refs = msg.a;
+				var decodeCachedRefs = A2($elm$json$Json$Decode$decodeValue, $author$project$Data$refCacheDecoder, refs);
+				var _v8 = function () {
+					if (decodeCachedRefs.$ === 'Ok') {
+						var cachedRefs = decodeCachedRefs.a;
+						return _Utils_Tuple2(
+							$elm$core$Dict$fromList(
+								A2(
+									$elm$core$List$map,
+									function (r) {
+										return _Utils_Tuple2(r.refId, r);
+									},
+									cachedRefs.refLocations)),
+							'');
+					} else {
+						var err = decodeCachedRefs.a;
+						return _Utils_Tuple2(
+							model.refLocations,
+							'Fehler: ' + $elm$json$Json$Decode$errorToString(err));
+					}
+				}();
+				var newRefs = _v8.a;
+				var errString = _v8.b;
+				var buildRef = function (cachedRefs) {
+					var _v11 = A2($elm$core$Dict$get, cachedRefs.refSelected, newRefs);
+					if (_v11.$ === 'Just') {
+						var ref = _v11.a;
+						return _Utils_Tuple2(ref.refId, ref);
+					} else {
+						return model.refLocation;
+					}
+				};
+				var newRef = function () {
+					if (decodeCachedRefs.$ === 'Ok') {
+						var cachedRefs = decodeCachedRefs.a;
+						return buildRef(cachedRefs);
+					} else {
+						return model.refLocation;
+					}
+				}();
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							error: _Utils_Tuple2(newRefs, errString).b,
+							refLocation: newRef,
+							refLocations: _Utils_Tuple2(newRefs, errString).a
+						}),
+					$elm$core$Platform$Cmd$none);
 		}
 	});
 var $mdgriffith$elm_ui$Internal$Model$Rgba = F4(
@@ -19284,7 +19383,8 @@ var $author$project$Views$Measurements$viewError = function (error) {
 					$author$project$Views$Styles$valueStyle,
 					_List_fromArray(
 						[
-							$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$orange)
+							$mdgriffith$elm_ui$Element$Font$color($author$project$Views$Styles$orange),
+							$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
 						])),
 				_List_fromArray(
 					[
@@ -20947,7 +21047,7 @@ var $author$project$Views$Settings$showReferceLocations = F2(
 					A2($danmarcab$material_icons$Material$Icons$Toggle$radio_button_unchecked, $avh4$elm_color$Color$darkGray, 32)));
 		};
 		var getRef = function (ort) {
-			var _v2 = A2($elm$core$Dict$get, ort, model.locations);
+			var _v2 = A2($elm$core$Dict$get, ort, model.refLocations);
 			if (_v2.$ === 'Just') {
 				var pos = _v2.a;
 				return _Utils_Tuple2(ort, pos);
@@ -21024,14 +21124,14 @@ var $author$project$Views$Settings$showRefSelection = function (model) {
 			var pos = _v1.b;
 			return !pos.fix;
 		},
-		$elm$core$Dict$toList(model.locations));
+		$elm$core$Dict$toList(model.refLocations));
 	var fixRefs = A2(
 		$elm$core$List$filter,
 		function (_v0) {
 			var pos = _v0.b;
 			return pos.fix;
 		},
-		$elm$core$Dict$toList(model.locations));
+		$elm$core$Dict$toList(model.refLocations));
 	return A2(
 		$mdgriffith$elm_ui$Element$column,
 		_List_fromArray(
@@ -22651,4 +22751,4 @@ var $author$project$View$view = function (model) {
 };
 var $author$project$Main$main = $elm$browser$Browser$element(
 	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$View$view});
-_Platform_export({'Main':{'init':$author$project$Main$main($elm$json$Json$Decode$value)({"versions":{"elm":"0.19.1"},"types":{"message":"Model.Msg","aliases":{"Model.Position":{"args":[],"type":"{ refId : String.String, latitude : Basics.Float, longitude : Basics.Float, altitude : Basics.Float, east : Basics.Float, north : Basics.Float, title : String.String, mdDescription : String.String, imgUrl : String.String, fix : Basics.Bool }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Model.Msg":{"args":[],"tags":{"GetTimeZone":["Time.Zone"],"WindowSizeUpdated":["Basics.Int","Basics.Int"],"LocationChange":["Json.Decode.Value"],"LocationError":["Json.Decode.Value"],"WatchGeolocation":["Json.Decode.Value"],"ChangeRefLocation":["( String.String, Model.Position )"],"ShowPage":["Model.Page"],"SetGeoLocState":["Model.GeoLocState"],"ToggleShowDistance":[],"ToggleShowDiagram":[],"ToggleMenu":["Basics.Bool"],"ToggleAddReference":[],"RefEastChanged":["String.String"],"RefNorthChanged":["String.String"],"RefTitleChanged":["String.String"],"RefImgSrcChanged":["String.String"],"RefDescriptionChanged":["String.String"],"RefLocationSave":[],"RefLocationDelete":["String.String"],"RefLocationEdit":["String.String"],"ExportReferences":[],"ImportRequested":[],"ImportSelected":["File.File"],"ImportLoaded":["String.String"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"File.File":{"args":[],"tags":{"File":[]}},"Basics.Float":{"args":[],"tags":{"Float":[]}},"Model.GeoLocState":{"args":[],"tags":{"Track":[],"Pause":[],"Reset":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Model.Page":{"args":[],"tags":{"AboutPage":[],"MeasurePage":[],"SettingsPage":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"List.List":{"args":["a"],"tags":{}}}}})}});}(this));
+_Platform_export({'Main':{'init':$author$project$Main$main($elm$json$Json$Decode$value)({"versions":{"elm":"0.19.1"},"types":{"message":"Model.Msg","aliases":{"Model.Position":{"args":[],"type":"{ refId : String.String, latitude : Basics.Float, longitude : Basics.Float, altitude : Basics.Float, east : Basics.Float, north : Basics.Float, title : String.String, mdDescription : String.String, imgUrl : String.String, fix : Basics.Bool }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Model.Msg":{"args":[],"tags":{"GetTimeZone":["Time.Zone"],"WindowSizeUpdated":["Basics.Int","Basics.Int"],"LocationChange":["Json.Decode.Value"],"LocationError":["Json.Decode.Value"],"WatchGeolocation":["Json.Decode.Value"],"ChangeRefLocation":["( String.String, Model.Position )"],"ShowPage":["Model.Page"],"SetGeoLocState":["Model.GeoLocState"],"ToggleShowDistance":[],"ToggleShowDiagram":[],"ToggleMenu":["Basics.Bool"],"ToggleAddReference":[],"RefEastChanged":["String.String"],"RefNorthChanged":["String.String"],"RefTitleChanged":["String.String"],"RefImgSrcChanged":["String.String"],"RefDescriptionChanged":["String.String"],"RefLocationSave":[],"RefLocationDelete":["String.String"],"RefLocationEdit":["String.String"],"ExportReferences":[],"ImportRequested":[],"ImportSelected":["File.File"],"ImportLoaded":["String.String"],"RestoreRefsFromCache":["Json.Decode.Value"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"File.File":{"args":[],"tags":{"File":[]}},"Basics.Float":{"args":[],"tags":{"Float":[]}},"Model.GeoLocState":{"args":[],"tags":{"Track":[],"Pause":[],"Reset":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Model.Page":{"args":[],"tags":{"AboutPage":[],"MeasurePage":[],"SettingsPage":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"List.List":{"args":["a"],"tags":{}}}}})}});}(this));
