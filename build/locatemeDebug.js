@@ -17931,7 +17931,7 @@ var $author$project$Views$Helpers$imgUrlFromWms = function (_v0) {
 			$elm$core$String$fromFloat(east + 200),
 			$elm$core$String$fromFloat(north + 200)
 		]);
-	return 'https://wms.zh.ch/uplayerwms/?SERVICE=WMS&VERSION=1.3.0' + ('&REQUEST=GetMap&FORMAT=image/png; mode=8bit' + ('&TRANSPARENT=false' + ('&LAYERS=uplayerwms' + ('&CRS=EPSG:2056' + ('&STYLES=' + ('&MAP_RESOLUTION=180' + ('&WIDTH=700' + ('&HEIGHT=700' + ('&BBOX=' + A2($elm$core$String$join, ',', bbox))))))))));
+	return 'https://wms.geo.admin.ch/?SERVICE=WMS' + ('&REQUEST=GetMap&VERSION=1.3.0' + ('&LAYERS=ch.swisstopo.pixelkarte-farbe-winter' + ('&STYLES=default' + ('&CRS=EPSG:2056' + ('&WIDTH=700' + ('&HEIGHT=700' + ('&FORMAT=image/png' + ('&BBOX=' + A2($elm$core$String$join, ',', bbox)))))))));
 };
 var $mdgriffith$elm_ui$Internal$Model$PaddingStyle = F5(
 	function (a, b, c, d, e) {
